@@ -326,6 +326,33 @@ Supported upload `file_type` values:
 
 After upload, use the returned `data_dir` with the existing validation, health, degradation, dispatch, and report endpoints.
 
+## Security Posture
+
+The MVP includes basic production-safety controls:
+
+- strict Pydantic request schemas with extra fields rejected
+- generic validation and server error responses
+- server-side exception logging without stack traces in API responses
+- explicit CORS origins through `ALLOWED_ORIGINS`
+- security headers for API and dashboard responses
+- basic in-memory rate limiting for `/api/*`
+- upload file size limit through `MAX_UPLOAD_BYTES`
+- CSV-only upload checks
+- path traversal protection for `data`, `runs`, and `reports`
+- FastAPI docs disabled when `APP_ENV=production`
+
+Recommended production environment:
+
+```bash
+APP_ENV=production
+ALLOWED_ORIGINS=https://your-domain.example
+MAX_UPLOAD_BYTES=5242880
+RATE_LIMIT_REQUESTS=120
+RATE_LIMIT_WINDOW_SECONDS=900
+```
+
+The frontend contains no secrets and should be treated as fully public. Business logic and validation remain server-side.
+
 ## Dashboard
 
 The dashboard provides:

@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from fastapi.testclient import TestClient
 
@@ -7,6 +8,13 @@ from backend.app.services.data_generator import SampleDataConfig, generate_sampl
 
 
 client = TestClient(app)
+
+
+def reset_relative_dir(relative_path: str) -> Path:
+    path = Path(relative_path)
+    if path.exists():
+        shutil.rmtree(path)
+    return path
 
 
 def test_api_status() -> None:
@@ -31,7 +39,8 @@ def test_dashboard_is_served() -> None:
 
 
 def test_api_pipeline_endpoints(tmp_path: Path) -> None:
-    data_dir = str(tmp_path / "data")
+    data_dir = "runs/test-api-pipeline"
+    reset_relative_dir(data_dir)
     sample_response = client.post("/api/sample-data", json={"output_dir": data_dir, "days": 2, "seed": 61})
     assert sample_response.status_code == 200
     assert "sample_bess_telemetry" in sample_response.json()["files"]
@@ -52,7 +61,8 @@ def test_api_pipeline_endpoints(tmp_path: Path) -> None:
     assert dispatch_response.status_code == 200
     assert "degradation_aware" in dispatch_response.json()
 
-    report_path = str(tmp_path / "report.html")
+    report_path = "reports/test-api-report.html"
+    Path(report_path).unlink(missing_ok=True)
     report_response = client.post(
         "/api/report",
         json={"data_dir": data_dir, "output_path": report_path, "dispatch_revenue": 7500},
@@ -62,7 +72,8 @@ def test_api_pipeline_endpoints(tmp_path: Path) -> None:
 
 
 def test_api_html_report(tmp_path: Path) -> None:
-    data_dir = str(tmp_path / "data")
+    data_dir = "runs/test-api-html-report"
+    reset_relative_dir(data_dir)
     client.post("/api/sample-data", json={"output_dir": data_dir, "days": 2, "seed": 62})
 
     response = client.get("/api/report/html", params={"data_dir": data_dir})
@@ -75,7 +86,8 @@ def test_api_html_report(tmp_path: Path) -> None:
 def test_api_session_upload_flow(tmp_path: Path) -> None:
     source_dir = tmp_path / "source"
     generate_sample_data(source_dir, SampleDataConfig(days=2, seed=63))
-    base_dir = tmp_path / "runs"
+    base_dir = "runs/test-api-upload"
+    reset_relative_dir(base_dir)
 
     create_response = client.post("/api/sessions", json={"base_dir": str(base_dir)})
     assert create_response.status_code == 200
@@ -111,3 +123,23 @@ def test_api_session_upload_flow(tmp_path: Path) -> None:
     dispatch_response = client.post("/api/dispatch", json={"data_dir": data_dir, "dispatch_revenue": 7500})
     assert dispatch_response.status_code == 200
     assert dispatch_response.json()["degradation_aware"]["status"] == "optimal"
+
+
+def test_api_rejects_path_traversal_and_extra_fields() -> None:
+    bad_path_response = client.post("/api/sample-data", json={"output_dir": "../secrets", "days": 2, "seed": 1})
+    assert bad_path_response.status_code == 400
+
+    extra_field_response = client.post(
+        "/api/degradation-cost",
+        json={"data_dir": "data", "dispatch_revenue": 7500, "unexpected": "nope"},
+    )
+    assert extra_field_response.status_code == 422
+    assert extra_field_response.json() == {"error": "Invalid request"}
+
+
+def test_security_headers_are_present() -> None:
+    response = client.get("/api/status")
+
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "no-referrer"
