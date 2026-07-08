@@ -43,6 +43,7 @@ This foundation supports the next modules:
 - [90-Day Action Plan](docs/08-90-day-action-plan.md)
 - [Project Charter](docs/09-project-charter.md)
 - [Commercial Positioning](docs/10-commercial-positioning.md)
+- [Product Improvement Roadmap](docs/11-product-improvement-roadmap.md)
 
 ## Project Structure
 
