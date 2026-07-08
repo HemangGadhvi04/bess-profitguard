@@ -1,15 +1,18 @@
 :root {
   color-scheme: light;
-  --bg: #f6f8fb;
+  --bg: #f4f7f6;
   --panel: #ffffff;
-  --text: #18212f;
-  --muted: #607086;
-  --line: #d9e0ea;
-  --accent: #1769aa;
-  --accent-dark: #105184;
-  --good: #167a55;
-  --warn: #9a6700;
+  --panel-soft: #f9fbfa;
+  --text: #14211d;
+  --muted: #64756f;
+  --line: #d8e2de;
+  --accent: #0f766e;
+  --accent-dark: #0b5f59;
+  --accent-soft: #e7f4f1;
+  --good: #13795b;
+  --warn: #a15c07;
   --bad: #b42318;
+  --shadow: 0 14px 34px rgba(20, 33, 29, .08);
 }
 
 * {
@@ -25,12 +28,35 @@ body {
 
 .topbar {
   align-items: center;
-  background: #ffffff;
+  background: rgba(255, 255, 255, .92);
   border-bottom: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: 22px 28px;
+  padding: 18px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.brand-mark {
+  align-items: center;
+  background: var(--text);
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 800;
+  height: 42px;
+  justify-content: center;
+  letter-spacing: .04em;
+  width: 42px;
 }
 
 h1,
@@ -40,12 +66,12 @@ p {
 }
 
 h1 {
-  font-size: 28px;
-  margin-bottom: 6px;
+  font-size: 24px;
+  margin-bottom: 4px;
 }
 
 h2 {
-  font-size: 18px;
+  font-size: 19px;
 }
 
 .topbar p,
@@ -57,15 +83,16 @@ label {
 
 main {
   margin: 0 auto;
-  max-width: 1180px;
-  padding: 24px;
+  max-width: 1240px;
+  padding: 24px 28px 36px;
 }
 
 .status-pill {
+  background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 999px;
   font-weight: 700;
-  padding: 8px 12px;
+  padding: 9px 13px;
   white-space: nowrap;
 }
 
@@ -86,12 +113,86 @@ main {
   border-radius: 8px;
 }
 
+.panel,
+.card,
+.message {
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, .8fr);
+  margin-top: 0;
+  padding: 24px;
+}
+
+.hero h2 {
+  font-size: 30px;
+  line-height: 1.15;
+  margin-bottom: 10px;
+  max-width: 760px;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 0;
+  max-width: 780px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.hero-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.hero-stats div {
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.hero-stats strong,
+.hero-stats span {
+  display: block;
+}
+
+.hero-stats strong {
+  font-size: 24px;
+}
+
+.hero-stats span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.workspace {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 16px;
+}
+
 .controls {
-  align-items: end;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto auto auto;
-  padding: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
 }
 
 label {
@@ -105,8 +206,15 @@ input {
   border-radius: 6px;
   color: var(--text);
   font: inherit;
+  min-height: 40px;
   padding: 9px 10px;
   width: 100%;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
 }
 
 button,
@@ -133,8 +241,16 @@ button:hover,
 }
 
 .button.secondary {
-  background: #ffffff;
+  background: var(--accent-soft);
+  border-color: #b9dcd6;
   color: var(--accent);
+}
+
+.action-row {
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .message {
@@ -158,8 +274,8 @@ button:hover,
 }
 
 .card {
-  min-height: 112px;
-  padding: 14px;
+  min-height: 118px;
+  padding: 16px;
 }
 
 .card span {
@@ -174,7 +290,7 @@ button:hover,
 
 .card strong {
   display: block;
-  font-size: 22px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
@@ -185,6 +301,7 @@ button:hover,
 }
 
 .chart-card {
+  background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
@@ -204,7 +321,7 @@ canvas {
 
 .panel {
   margin-top: 16px;
-  padding: 16px;
+  padding: 18px;
 }
 
 .panel-heading {
@@ -212,6 +329,10 @@ canvas {
   display: flex;
   gap: 16px;
   justify-content: space-between;
+}
+
+.panel-heading.compact {
+  margin-bottom: 14px;
 }
 
 .panel-heading p {
@@ -232,7 +353,7 @@ canvas {
 }
 
 .upload-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .upload-grid input {
@@ -268,11 +389,12 @@ table {
 th,
 td {
   border-bottom: 1px solid var(--line);
-  padding: 10px;
+  padding: 11px 10px;
   text-align: left;
 }
 
 th {
+  background: var(--panel-soft);
   color: var(--muted);
   font-size: 12px;
   text-transform: uppercase;
@@ -304,7 +426,9 @@ ul {
   .split,
   .session-row,
   .upload-grid,
-  .chart-grid {
+  .chart-grid,
+  .workspace,
+  .hero {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -321,7 +445,10 @@ ul {
   .session-row,
   .upload-grid,
   .upload-actions,
-  .chart-grid {
+  .chart-grid,
+  .workspace,
+  .hero,
+  .action-row {
     grid-template-columns: 1fr;
   }
 

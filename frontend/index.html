@@ -8,67 +8,95 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <h1>BESS ProfitGuard</h1>
-      <p>Battery-aware EMS audit for BESS, EV charging sites, and commercial microgrids.</p>
+    <div class="brand">
+      <div class="brand-mark">BP</div>
+      <div>
+        <h1>BESS ProfitGuard</h1>
+        <p>Battery-aware EMS audit for BESS, EV charging sites, and commercial microgrids.</p>
+      </div>
     </div>
     <div class="status-pill" id="apiStatus">Checking API</div>
   </header>
 
   <main>
-    <section class="controls">
-      <label>
-        Data directory
-        <input id="dataDir" value="data">
-      </label>
-      <label>
-        Dispatch revenue assumption
-        <input id="dispatchRevenue" type="number" value="7500" min="0" step="100">
-      </label>
-      <label>
-        Sample days
-        <input id="sampleDays" type="number" value="7" min="1" max="30">
-      </label>
-      <label>
-        Seed
-        <input id="sampleSeed" type="number" value="42">
-      </label>
-      <button id="generateBtn">Generate Sample Data</button>
-      <button id="runBtn">Run Analysis</button>
-      <a id="reportLink" class="button secondary" href="/api/report/html" target="_blank" rel="noreferrer">Open HTML Report</a>
+    <section class="hero panel">
+      <div>
+        <span class="eyebrow">Degradation-aware dispatch intelligence</span>
+        <h2>Compare battery revenue against lifetime cost before dispatching.</h2>
+        <p>Generate or upload site data, validate telemetry quality, estimate battery health, price degradation, optimize the schedule, and export an audit report.</p>
+      </div>
+      <div class="hero-stats">
+        <div><strong>3</strong><span>dispatch strategies</span></div>
+        <div><strong>24h</strong><span>optimization horizon</span></div>
+        <div><strong>CSV</strong><span>upload-ready workflow</span></div>
+      </div>
     </section>
 
-    <section class="panel upload-panel">
-      <div class="panel-heading">
-        <div>
-          <h2>Upload CSV Session</h2>
-          <p>Create an isolated run folder, upload the six required CSV files, then run analysis on that uploaded dataset.</p>
+    <section class="workspace">
+      <section class="panel controls-panel">
+        <div class="panel-heading compact">
+          <div>
+            <h2>Analysis Workspace</h2>
+            <p>Choose generated sample data or an uploaded session, then run the full BESS ProfitGuard pipeline.</p>
+          </div>
         </div>
-        <button id="createSessionBtn" type="button">Create Session</button>
-      </div>
-      <div class="session-row">
-        <label>
-          Session ID
-          <input id="sessionId" readonly placeholder="Create a session first">
-        </label>
-        <label>
-          Upload base directory
-          <input id="uploadBaseDir" value="runs">
-        </label>
-      </div>
-      <div class="upload-grid">
-        <label>bess_telemetry<input id="uploadBessTelemetry" type="file" accept=".csv"></label>
-        <label>site_load<input id="uploadSiteLoad" type="file" accept=".csv"></label>
-        <label>pv_generation<input id="uploadPvGeneration" type="file" accept=".csv"></label>
-        <label>tariff<input id="uploadTariff" type="file" accept=".csv"></label>
-        <label>ev_sessions<input id="uploadEvSessions" type="file" accept=".csv"></label>
-        <label>battery_config<input id="uploadBatteryConfig" type="file" accept=".csv"></label>
-      </div>
-      <div class="upload-actions">
-        <button id="uploadFilesBtn" type="button">Upload Selected Files</button>
-        <button id="refreshFilesBtn" type="button">Refresh File Status</button>
-        <span id="uploadStatus">No upload session yet.</span>
-      </div>
+        <div class="controls">
+          <label>
+            Data directory
+            <input id="dataDir" value="data">
+          </label>
+          <label>
+            Dispatch revenue assumption
+            <input id="dispatchRevenue" type="number" value="7500" min="0" step="100">
+          </label>
+          <label>
+            Sample days
+            <input id="sampleDays" type="number" value="7" min="1" max="30">
+          </label>
+          <label>
+            Seed
+            <input id="sampleSeed" type="number" value="42">
+          </label>
+          <div class="action-row">
+            <button id="generateBtn">Generate Sample Data</button>
+            <button id="runBtn">Run Analysis</button>
+            <a id="reportLink" class="button secondary" href="/api/report/html" target="_blank" rel="noreferrer">Open HTML Report</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel upload-panel">
+        <div class="panel-heading compact">
+          <div>
+            <h2>Upload CSV Session</h2>
+            <p>Create an isolated run folder, upload the six required CSV files, then run analysis on that uploaded dataset.</p>
+          </div>
+          <button id="createSessionBtn" type="button">Create Session</button>
+        </div>
+        <div class="session-row">
+          <label>
+            Session ID
+            <input id="sessionId" readonly placeholder="Create a session first">
+          </label>
+          <label>
+            Upload base directory
+            <input id="uploadBaseDir" value="runs">
+          </label>
+        </div>
+        <div class="upload-grid">
+          <label>bess_telemetry<input id="uploadBessTelemetry" type="file" accept=".csv"></label>
+          <label>site_load<input id="uploadSiteLoad" type="file" accept=".csv"></label>
+          <label>pv_generation<input id="uploadPvGeneration" type="file" accept=".csv"></label>
+          <label>tariff<input id="uploadTariff" type="file" accept=".csv"></label>
+          <label>ev_sessions<input id="uploadEvSessions" type="file" accept=".csv"></label>
+          <label>battery_config<input id="uploadBatteryConfig" type="file" accept=".csv"></label>
+        </div>
+        <div class="upload-actions">
+          <button id="uploadFilesBtn" type="button">Upload Selected Files</button>
+          <button id="refreshFilesBtn" type="button">Refresh File Status</button>
+          <span id="uploadStatus">No upload session yet.</span>
+        </div>
+      </section>
     </section>
 
     <section id="message" class="message" hidden></section>
