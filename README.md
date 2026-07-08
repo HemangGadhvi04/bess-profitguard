@@ -42,6 +42,7 @@ This foundation supports the next modules:
 - [Internship Selection Filter](docs/07-internship-selection-filter.md)
 - [90-Day Action Plan](docs/08-90-day-action-plan.md)
 - [Project Charter](docs/09-project-charter.md)
+- [Commercial Positioning](docs/10-commercial-positioning.md)
 
 ## Project Structure
 
@@ -391,6 +392,8 @@ The first software wedge is BESS ProfitGuard:
 - Degradation cost modeling
 - Degradation-aware dispatch optimization
 - EV depot and commercial microgrid reporting
+
+Commercially, the first paid version should be sold as a decision-support audit/report, not as live battery control software.
 
 The immediate next task is to improve the dashboard into a more complete product UI:
 
