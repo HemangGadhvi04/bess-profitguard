@@ -29,6 +29,8 @@ class StrategySummary:
     total_discharge_energy_kwh: float
     final_soc_percent: float | None
     status: str
+    peak_grid_import_kw: float = 0.0
+    demand_charge_cost: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -41,6 +43,8 @@ class StrategySummary:
             "total_discharge_energy_kwh": self.total_discharge_energy_kwh,
             "final_soc_percent": self.final_soc_percent,
             "status": self.status,
+            "peak_grid_import_kw": self.peak_grid_import_kw,
+            "demand_charge_cost": self.demand_charge_cost,
         }
 
 
@@ -93,7 +97,11 @@ def _battery_config_value(config: pd.Series | dict[str, Any], key: str) -> float
     return float(dict(config)[key])
 
 
-def calculate_no_battery_cost(site_frame: pd.DataFrame, dt_hours: float, ev_sessions: pd.DataFrame | None = None) -> float:
+def calculate_no_battery_profile(
+    site_frame: pd.DataFrame,
+    dt_hours: float,
+    ev_sessions: pd.DataFrame | None = None,
+) -> tuple[float, float, float]:
     net_load = site_frame["site_load_kw"] - site_frame["pv_generation_kw"]
     
     # If EV sessions exist, assume they charge at uniform rate over their connection window
@@ -126,7 +134,12 @@ def calculate_no_battery_cost(site_frame: pd.DataFrame, dt_hours: float, ev_sess
     demand_cost = peak_import * site_frame["demand_charge_per_kw"].mean()
     
     cost = energy_cost + demand_cost
-    return round(float(cost), 2)
+    return round(float(cost), 2), round(float(peak_import), 3), round(float(demand_cost), 2)
+
+
+def calculate_no_battery_cost(site_frame: pd.DataFrame, dt_hours: float, ev_sessions: pd.DataFrame | None = None) -> float:
+    cost, _, _ = calculate_no_battery_profile(site_frame, dt_hours, ev_sessions)
+    return cost
 
 
 def _solve_battery_dispatch(
@@ -289,6 +302,8 @@ def _solve_battery_dispatch(
             total_discharge_energy_kwh=0.0,
             final_soc_percent=None,
             status=result.message,
+            peak_grid_import_kw=0.0,
+            demand_charge_cost=0.0,
         )
         return summary, []
 
@@ -345,6 +360,8 @@ def _solve_battery_dispatch(
         total_discharge_energy_kwh=round(discharge_energy, 2),
         final_soc_percent=round(final_soc_percent, 2),
         status="optimal",
+        peak_grid_import_kw=round(float(peak_import_val), 3),
+        demand_charge_cost=round(float(peak_import_val * mean_demand_charge), 2),
     )
     return summary, schedule
 
@@ -365,7 +382,7 @@ def compare_dispatch_strategies(
     site_frame = _prepare_site_frame(site_load, pv_generation, tariff, optimizer_config)
     dt_hours = pd.Timedelta(optimizer_config.freq) / pd.Timedelta(hours=1)
     
-    baseline_cost = calculate_no_battery_cost(site_frame, dt_hours, ev_sessions)
+    baseline_cost, baseline_peak, baseline_demand_cost = calculate_no_battery_profile(site_frame, dt_hours, ev_sessions)
     baseline = StrategySummary(
         strategy="no_battery",
         energy_cost=baseline_cost,
@@ -376,6 +393,8 @@ def compare_dispatch_strategies(
         total_discharge_energy_kwh=0.0,
         final_soc_percent=None,
         status="calculated",
+        peak_grid_import_kw=baseline_peak,
+        demand_charge_cost=baseline_demand_cost,
     )
 
     usable_capacity_kwh = _battery_config_value(battery_config, "usable_capacity_kwh")

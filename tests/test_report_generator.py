@@ -28,10 +28,15 @@ def test_report_generator_renders_core_sections(tmp_path: Path) -> None:
     html = render_html_report(report)
 
     assert "BESS ProfitGuard Dispatch Audit" in html
-    assert "Data Validation" in html
-    assert "Battery Health" in html
-    assert "Degradation Cost" in html
+    assert "Executive Summary" in html
+    assert "Site Assumptions" in html
+    assert "Data Quality Score" in html
+    assert "Battery Health Summary" in html
+    assert "Revenue vs Degradation Cost" in html
     assert "Dispatch Strategy Comparison" in html
+    assert "Monthly Net Savings" in html
+    assert "Battery Stress Events" in html
+    assert "Recommended Operating Policy" in html
     assert "Assumptions and Limitations" in html
     assert "Decision-support model, not OEM certification" in html
     assert "degradation_aware" in html

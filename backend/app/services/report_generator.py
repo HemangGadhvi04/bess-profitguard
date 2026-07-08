@@ -37,6 +37,12 @@ def _number(value: float | int | None, suffix: str = "") -> str:
     return f"{value:,.2f}{suffix}"
 
 
+def _percent(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.1f}%"
+
+
 def _status_class(ok: bool) -> str:
     return "ok" if ok else "bad"
 
@@ -109,20 +115,69 @@ def _config_value(config: Optional[dict[str, Any]], key: str, fallback: Any = No
     return config.get(key, fallback)
 
 
+def _data_quality_score(validation_reports: list[ValidationReport]) -> float:
+    total_rows = sum(report.row_count for report in validation_reports) or 1
+    error_penalty = sum(report.error_count * 20 for report in validation_reports)
+    warning_penalty = sum(report.warning_count * 4 for report in validation_reports)
+    issue_density_penalty = sum(len(report.issues) for report in validation_reports) / total_rows * 100
+    return round(max(0.0, min(100.0, 100.0 - error_penalty - warning_penalty - issue_density_penalty)), 1)
+
+
+def _confidence_score(validation_score: float, health: BatteryHealthReport, dispatch: DispatchComparisonReport) -> tuple[float, str]:
+    score = validation_score
+    if health.risk_level == "medium":
+        score -= 8
+    elif health.risk_level == "high":
+        score -= 18
+    if dispatch.degradation_aware.status != "optimal":
+        score -= 35
+    if dispatch.degradation_aware.net_savings < 0:
+        score -= 12
+    bounded = round(max(0.0, min(100.0, score)), 1)
+    if bounded >= 85:
+        label = "High"
+    elif bounded >= 70:
+        label = "Medium"
+    else:
+        label = "Low"
+    return bounded, label
+
+
+def _operating_policy(dispatch: DispatchComparisonReport) -> list[str]:
+    policy = [
+        "Use degradation-aware dispatch as the default operating policy for this horizon.",
+        "Preserve reserve SoC before low-value cycling or uncertain EV demand periods.",
+        "Discharge during the highest-value tariff and peak-shaving windows.",
+    ]
+    if dispatch.degradation_aware.total_discharge_energy_kwh < dispatch.energy_cost_only.total_discharge_energy_kwh:
+        policy.append("Limit extra discharge because energy-cost-only dispatch uses more battery lifetime for lower net value.")
+    if dispatch.degradation_aware.peak_grid_import_kw < dispatch.baseline.peak_grid_import_kw:
+        policy.append("Use the BESS to cap site peak import where demand charges are active.")
+    return policy
+
+
 def render_html_report(report: ProjectReport) -> str:
     currency = report.degradation_report.currency
     validation_passed = all(item.passed for item in report.validation_reports)
     health = report.health_report
     degradation = report.degradation_report
     dispatch = report.dispatch_report
+    data_quality_score = _data_quality_score(report.validation_reports)
+    confidence_score, confidence_label = _confidence_score(data_quality_score, health, dispatch)
+    daily_net_savings = dispatch.degradation_aware.net_savings
+    monthly_net_savings = daily_net_savings * 30
+    annual_net_savings = daily_net_savings * 365
+    cost_only_extra_degradation = dispatch.energy_cost_only.degradation_cost - dispatch.degradation_aware.degradation_cost
+    peak_reduction_kw = max(0.0, dispatch.baseline.peak_grid_import_kw - dispatch.degradation_aware.peak_grid_import_kw)
+    demand_charge_savings = max(0.0, dispatch.baseline.demand_charge_cost - dispatch.degradation_aware.demand_charge_cost)
 
     headline_metrics = [
-        ("Validation", "PASS" if validation_passed else "FAIL", "Data quality gate"),
+        ("Data Quality", _percent(data_quality_score), "Validation confidence"),
         ("Battery Risk", health.risk_level.upper(), f"Stress score {health.stress_score:.2f}/100"),
         ("SoH", _number(health.estimated_soh_percent, "%"), "Simple health estimate"),
-        ("Degradation Cost", _money(degradation.estimated_degradation_cost, currency), "Telemetry-based lifetime cost"),
-        ("Best Net Savings", _money(dispatch.degradation_aware.net_savings, currency), "24-hour degradation-aware dispatch"),
-        ("Recommendation", dispatch.degradation_aware.strategy, "Selected schedule basis"),
+        ("Monthly Net Savings", _money(monthly_net_savings, currency), "30-day projection"),
+        ("Peak Reduction", _number(peak_reduction_kw, " kW"), "Demand-charge exposure"),
+        ("Confidence", f"{confidence_label} ({_percent(confidence_score)})", "Audit confidence"),
     ]
 
     risk_reasons = "".join(f"<li>{escape(reason)}</li>" for reason in health.risk_reasons + degradation.reasons)
@@ -144,6 +199,17 @@ def render_html_report(report: ProjectReport) -> str:
     ]
     assumption_rows = "\n".join(
         f"<tr><th>{escape(label)}</th><td>{escape(str(value))}</td></tr>" for label, value in assumptions
+    )
+    operating_policy = "".join(f"<li>{escape(item)}</li>" for item in _operating_policy(dispatch))
+    stress_events = [
+        ("High temperature exposure", _number(health.high_temperature_hours, " h"), "Thermal stress can accelerate battery aging."),
+        ("High SoC dwell", _number(health.high_soc_dwell_hours, " h"), "Long high-SoC dwell can increase calendar aging."),
+        ("Low SoC dwell", _number(health.low_soc_dwell_hours, " h"), "Low reserve periods reduce operating flexibility."),
+        ("Max C-rate", _number(health.max_c_rate, "C"), "High C-rate operation increases cycling stress."),
+    ]
+    stress_rows = "\n".join(
+        f"<tr><td>{escape(label)}</td><td>{escape(value)}</td><td>{escape(note)}</td></tr>"
+        for label, value, note in stress_events
     )
 
     html = f"""<!doctype html>
@@ -177,27 +243,37 @@ def render_html_report(report: ProjectReport) -> str:
     {_render_metric_cards(headline_metrics)}
   </div>
 
-  <h2>Executive Recommendation</h2>
+  <h2>Executive Summary</h2>
   <div class="callout">
     <strong>Recommended Strategy: {escape(dispatch.degradation_aware.strategy)}</strong>
-    <p><strong>Why:</strong></p>
-    <ul>
-      <li>Net savings are higher than energy-cost-only dispatch.</li>
-      <li>Battery stress is reduced.</li>
-      <li>Reserve SoC is maintained.</li>
-      <li>Degradation cost is explicitly accounted for.</li>
-    </ul>
-    <p><strong>Action:</strong></p>
-    <p>Discharge only during the highest-value hours. Avoid low-value cycling.</p>
+    <p>{escape(dispatch.recommendation)}</p>
+    <p><strong>Estimated 24-hour net savings:</strong> {_money(daily_net_savings, currency)}. <strong>Projected monthly net savings:</strong> {_money(monthly_net_savings, currency)}.</p>
+    <p><strong>Peak demand reduced from</strong> {_number(dispatch.baseline.peak_grid_import_kw, " kW")} <strong>to</strong> {_number(dispatch.degradation_aware.peak_grid_import_kw, " kW")}. <strong>Modeled demand-charge savings:</strong> {_money(demand_charge_savings, currency)}.</p>
   </div>
 
-  <h2>Data Validation</h2>
+  <h2>Recommended Operating Policy</h2>
+  <div class="callout">
+    <ul>
+      {operating_policy}
+    </ul>
+  </div>
+
+  <h2>Site Assumptions</h2>
+  <table>
+    <tbody>{assumption_rows}</tbody>
+  </table>
+
+  <h2>Data Quality Score</h2>
+  <div class="callout">
+    <strong>{_percent(data_quality_score)} data quality score</strong>
+    <p>Validation status: {"PASS" if validation_passed else "FAIL"}. Confidence is {escape(confidence_label.lower())} because model confidence combines data quality, battery stress, and optimizer status.</p>
+  </div>
   <table>
     <thead><tr><th>Dataset</th><th>Rows</th><th>Status</th><th>Errors</th><th>Warnings</th><th>Issues</th></tr></thead>
     <tbody>{_render_validation_table(report.validation_reports)}</tbody>
   </table>
 
-  <h2>Battery Health</h2>
+  <h2>Battery Health Summary</h2>
   <table>
     <tbody>
       <tr><th>Estimated SoH</th><td>{_number(health.estimated_soh_percent, "%")}</td></tr>
@@ -211,7 +287,7 @@ def render_html_report(report: ProjectReport) -> str:
     </tbody>
   </table>
 
-  <h2>Degradation Cost</h2>
+  <h2>Revenue vs Degradation Cost</h2>
   <table>
     <tbody>
       <tr><th>Replacement Cost</th><td>{_money(degradation.replacement_cost, currency)}</td></tr>
@@ -221,6 +297,7 @@ def render_html_report(report: ProjectReport) -> str:
       <tr><th>Estimated Degradation Cost</th><td>{_money(degradation.estimated_degradation_cost, currency)}</td></tr>
       <tr><th>Dispatch Revenue Assumption</th><td>{_money(degradation.dispatch_revenue, currency)}</td></tr>
       <tr><th>Net Benefit</th><td>{_money(degradation.net_benefit, currency)}</td></tr>
+      <tr><th>Cost-Only Extra Degradation</th><td>{_money(cost_only_extra_degradation, currency)}</td></tr>
       <tr><th>Standalone Recommendation</th><td>{escape(degradation.recommendation)}</td></tr>
     </tbody>
   </table>
@@ -237,13 +314,30 @@ def render_html_report(report: ProjectReport) -> str:
     </tbody>
   </table>
 
-  <h2>Risk Reasons</h2>
+  <h2>Monthly Net Savings</h2>
+  <table>
+    <tbody>
+      <tr><th>Daily Net Savings</th><td>{_money(daily_net_savings, currency)}</td></tr>
+      <tr><th>Projected Monthly Net Savings</th><td>{_money(monthly_net_savings, currency)}</td></tr>
+      <tr><th>Projected Annual Net Savings</th><td>{_money(annual_net_savings, currency)}</td></tr>
+      <tr><th>Demand Charge Savings</th><td>{_money(demand_charge_savings, currency)}</td></tr>
+      <tr><th>Peak Demand Reduction</th><td>{_number(peak_reduction_kw, " kW")}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Battery Stress Events</h2>
+  <table>
+    <thead><tr><th>Event</th><th>Measured Value</th><th>Meaning</th></tr></thead>
+    <tbody>{stress_rows}</tbody>
+  </table>
   <ul>{risk_reasons}</ul>
 
   <h2>Assumptions and Limitations</h2>
-  <table>
-    <tbody>{assumption_rows}</tbody>
-  </table>
+  <div class="callout">
+    <strong>Decision-support model, not OEM certification.</strong>
+    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
+    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
+  </div>
 
   <h2>Sensitivity Analysis</h2>
   <table>
@@ -252,11 +346,6 @@ def render_html_report(report: ProjectReport) -> str:
       {"".join(f"<tr><td>{escape(label)}</td><td>{escape(_money(val, currency))}</td></tr>" for label, val in (report.sensitivity_analysis or []))}
     </tbody>
   </table>
-  <div class="callout">
-    <strong>Decision-support model, not OEM certification.</strong>
-    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
-    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
-  </div>
 
   <h2>Schedule Preview</h2>
   <table>

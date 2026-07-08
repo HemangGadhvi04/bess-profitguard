@@ -29,6 +29,9 @@ def test_dispatch_optimizer_compares_three_strategies(tmp_path: Path) -> None:
     assert report.energy_cost_only.gross_savings >= 0
     assert report.degradation_aware.gross_savings >= 0
     assert report.degradation_aware.degradation_cost >= 0
+    assert report.baseline.peak_grid_import_kw > 0
+    assert report.degradation_aware.peak_grid_import_kw >= 0
+    assert "peak_grid_import_kw" in report.degradation_aware.to_dict()
     assert len(report.schedule) == 24
 
 

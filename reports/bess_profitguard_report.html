@@ -23,32 +23,51 @@
 </head>
 <body>
   <h1>BESS ProfitGuard Dispatch Audit</h1>
-  <p class="subtitle">Generated at 2026-07-08T18:41:33. Battery-aware EMS audit for BESS and EV charging site operation.</p>
+  <p class="subtitle">Generated at 2026-07-08T18:52:54. Battery-aware EMS audit for BESS and EV charging site operation.</p>
 
   <div class="grid">
-    <div class="card"><div class="label">Validation</div><div class="value">PASS</div><div class="note">Data quality gate</div></div>
+    <div class="card"><div class="label">Data Quality</div><div class="value">87.9%</div><div class="note">Validation confidence</div></div>
 <div class="card"><div class="label">Battery Risk</div><div class="value">MEDIUM</div><div class="note">Stress score 56.79/100</div></div>
 <div class="card"><div class="label">SoH</div><div class="value">99.03%</div><div class="note">Simple health estimate</div></div>
-<div class="card"><div class="label">Degradation Cost</div><div class="value">₹7,280.31</div><div class="note">Telemetry-based lifetime cost</div></div>
-<div class="card"><div class="label">Best Net Savings</div><div class="value">₹13,301.65</div><div class="note">24-hour degradation-aware dispatch</div></div>
-<div class="card"><div class="label">Recommendation</div><div class="value">degradation_aware</div><div class="note">Selected schedule basis</div></div>
+<div class="card"><div class="label">Monthly Net Savings</div><div class="value">₹399,049.50</div><div class="note">30-day projection</div></div>
+<div class="card"><div class="label">Peak Reduction</div><div class="value">106.69 kW</div><div class="note">Demand-charge exposure</div></div>
+<div class="card"><div class="label">Confidence</div><div class="value">Medium (79.9%)</div><div class="note">Audit confidence</div></div>
   </div>
 
-  <h2>Executive Recommendation</h2>
+  <h2>Executive Summary</h2>
   <div class="callout">
     <strong>Recommended Strategy: degradation_aware</strong>
-    <p><strong>Why:</strong></p>
-    <ul>
-      <li>Net savings are higher than energy-cost-only dispatch.</li>
-      <li>Battery stress is reduced.</li>
-      <li>Reserve SoC is maintained.</li>
-      <li>Degradation cost is explicitly accounted for.</li>
-    </ul>
-    <p><strong>Action:</strong></p>
-    <p>Discharge only during the highest-value hours. Avoid low-value cycling.</p>
+    <p>Use degradation-aware dispatch; it protects net value after battery lifetime cost.</p>
+    <p><strong>Estimated 24-hour net savings:</strong> ₹13,301.65. <strong>Projected monthly net savings:</strong> ₹399,049.50.</p>
+    <p><strong>Peak demand reduced from</strong> 338.73 kW <strong>to</strong> 232.04 kW. <strong>Modeled demand-charge savings:</strong> ₹10,002.38.</p>
   </div>
 
-  <h2>Data Validation</h2>
+  <h2>Recommended Operating Policy</h2>
+  <div class="callout">
+    <ul>
+      <li>Use degradation-aware dispatch as the default operating policy for this horizon.</li><li>Preserve reserve SoC before low-value cycling or uncertain EV demand periods.</li><li>Discharge during the highest-value tariff and peak-shaving windows.</li><li>Limit extra discharge because energy-cost-only dispatch uses more battery lifetime for lower net value.</li><li>Use the BESS to cap site peak import where demand charges are active.</li>
+    </ul>
+  </div>
+
+  <h2>Site Assumptions</h2>
+  <table>
+    <tbody><tr><th>Battery chemistry</th><td>LFP</td></tr>
+<tr><th>Nameplate capacity</th><td>500.00 kWh</td></tr>
+<tr><th>Usable capacity</th><td>450.00 kWh</td></tr>
+<tr><th>Reserve SoC</th><td>20.00%</td></tr>
+<tr><th>Allowed SoC window</th><td>10.00% to 95.00%</td></tr>
+<tr><th>Max charge power</th><td>250.00 kW</td></tr>
+<tr><th>Max discharge power</th><td>250.00 kW</td></tr>
+<tr><th>Replacement cost</th><td>₹4,000,000.00</td></tr>
+<tr><th>Expected cycle life</th><td>5,000.00 cycles</td></tr>
+<tr><th>Forecast horizon</th><td>24-hour dispatch optimization</td></tr></tbody>
+  </table>
+
+  <h2>Data Quality Score</h2>
+  <div class="callout">
+    <strong>87.9% data quality score</strong>
+    <p>Validation status: PASS. Confidence is medium because model confidence combines data quality, battery stress, and optimizer status.</p>
+  </div>
   <table>
     <thead><tr><th>Dataset</th><th>Rows</th><th>Status</th><th>Errors</th><th>Warnings</th><th>Issues</th></tr></thead>
     <tbody><tr><td>bess_telemetry</td><td>672</td><td class="ok">PASS</td><td>0</td><td>2</td><td>high_temperature_exposure (6), high_soc_dwell (129)</td></tr>
@@ -58,7 +77,7 @@
 <tr><td>ev_sessions</td><td>140</td><td class="ok">PASS</td><td>0</td><td>1</td><td>ev_energy_infeasible (25)</td></tr></tbody>
   </table>
 
-  <h2>Battery Health</h2>
+  <h2>Battery Health Summary</h2>
   <table>
     <tbody>
       <tr><th>Estimated SoH</th><td>99.03%</td></tr>
@@ -72,7 +91,7 @@
     </tbody>
   </table>
 
-  <h2>Degradation Cost</h2>
+  <h2>Revenue vs Degradation Cost</h2>
   <table>
     <tbody>
       <tr><th>Replacement Cost</th><td>₹4,000,000.00</td></tr>
@@ -82,6 +101,7 @@
       <tr><th>Estimated Degradation Cost</th><td>₹7,280.31</td></tr>
       <tr><th>Dispatch Revenue Assumption</th><td>₹7,500.00</td></tr>
       <tr><th>Net Benefit</th><td>₹219.69</td></tr>
+      <tr><th>Cost-Only Extra Degradation</th><td>₹514.53</td></tr>
       <tr><th>Standalone Recommendation</th><td>dispatch_with_caution</td></tr>
     </tbody>
   </table>
@@ -98,22 +118,33 @@
     </tbody>
   </table>
 
-  <h2>Risk Reasons</h2>
+  <h2>Monthly Net Savings</h2>
+  <table>
+    <tbody>
+      <tr><th>Daily Net Savings</th><td>₹13,301.65</td></tr>
+      <tr><th>Projected Monthly Net Savings</th><td>₹399,049.50</td></tr>
+      <tr><th>Projected Annual Net Savings</th><td>₹4,855,102.25</td></tr>
+      <tr><th>Demand Charge Savings</th><td>₹10,002.38</td></tr>
+      <tr><th>Peak Demand Reduction</th><td>106.69 kW</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Battery Stress Events</h2>
+  <table>
+    <thead><tr><th>Event</th><th>Measured Value</th><th>Meaning</th></tr></thead>
+    <tbody><tr><td>High temperature exposure</td><td>1.50 h</td><td>Thermal stress can accelerate battery aging.</td></tr>
+<tr><td>High SoC dwell</td><td>32.25 h</td><td>Long high-SoC dwell can increase calendar aging.</td></tr>
+<tr><td>Low SoC dwell</td><td>28.00 h</td><td>Low reserve periods reduce operating flexibility.</td></tr>
+<tr><td>Max C-rate</td><td>0.49C</td><td>High C-rate operation increases cycling stress.</td></tr></tbody>
+  </table>
   <ul><li>Temperature exceeded 35 C for 1.50 hours.</li><li>SoC stayed above 85% for 32.25 hours.</li><li>SoC stayed below 15% for 28.00 hours.</li><li>Dispatch is net-positive but margin is thin after degradation cost.</li><li>High-temperature exposure increased degradation cost.</li><li>High/low SoC dwell increased degradation cost.</li></ul>
 
   <h2>Assumptions and Limitations</h2>
-  <table>
-    <tbody><tr><th>Battery chemistry</th><td>LFP</td></tr>
-<tr><th>Nameplate capacity</th><td>500.00 kWh</td></tr>
-<tr><th>Usable capacity</th><td>450.00 kWh</td></tr>
-<tr><th>Reserve SoC</th><td>20.00%</td></tr>
-<tr><th>Allowed SoC window</th><td>10.00% to 95.00%</td></tr>
-<tr><th>Max charge power</th><td>250.00 kW</td></tr>
-<tr><th>Max discharge power</th><td>250.00 kW</td></tr>
-<tr><th>Replacement cost</th><td>₹4,000,000.00</td></tr>
-<tr><th>Expected cycle life</th><td>5,000.00 cycles</td></tr>
-<tr><th>Forecast horizon</th><td>24-hour dispatch optimization</td></tr></tbody>
-  </table>
+  <div class="callout">
+    <strong>Decision-support model, not OEM certification.</strong>
+    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
+    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
+  </div>
 
   <h2>Sensitivity Analysis</h2>
   <table>
@@ -122,11 +153,6 @@
       <tr><td>Base case</td><td>₹13,301.65</td></tr><tr><td>High degradation cost (+50%)</td><td>₹13,004.98</td></tr><tr><td>Low degradation cost (-50%)</td><td>₹13,797.00</td></tr>
     </tbody>
   </table>
-  <div class="callout">
-    <strong>Decision-support model, not OEM certification.</strong>
-    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
-    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
-  </div>
 
   <h2>Schedule Preview</h2>
   <table>

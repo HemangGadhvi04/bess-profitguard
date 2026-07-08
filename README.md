@@ -262,6 +262,8 @@ The optimizer uses a 24-hour linear program with:
 - charge/discharge efficiency
 - terminal SoC constraint for fair daily comparison
 - degradation cost per discharged kWh
+- EV charging session windows and energy deadlines
+- demand-charge peak import modeling
 
 The strategy report includes:
 
@@ -269,6 +271,8 @@ The strategy report includes:
 - gross savings
 - degradation cost
 - net savings
+- peak grid import
+- demand-charge cost
 - total charge energy
 - total discharge energy
 - final SoC
@@ -279,14 +283,18 @@ The strategy report includes:
 
 The generated report combines:
 
-- validation status
-- battery health metrics
-- degradation cost metrics
+- executive summary
+- site assumptions
+- data quality score
+- battery health summary
+- dispatch strategy comparison
+- revenue vs degradation cost
+- monthly net savings projection
+- battery stress events
+- recommended operating policy
 - no-battery baseline
 - energy-cost-only dispatch
 - degradation-aware dispatch
-- executive recommendation
-- risk reasons
 - operating assumptions and model limitations
 - schedule preview
 
