@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BESS ProfitGuard Dashboard</title>
+  <link rel="stylesheet" href="/dashboard/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>BESS ProfitGuard</h1>
+      <p>Battery-aware EMS audit for BESS, EV charging sites, and commercial microgrids.</p>
+    </div>
+    <div class="status-pill" id="apiStatus">Checking API</div>
+  </header>
+
+  <main>
+    <section class="controls">
+      <label>
+        Data directory
+        <input id="dataDir" value="data">
+      </label>
+      <label>
+        Dispatch revenue assumption
+        <input id="dispatchRevenue" type="number" value="7500" min="0" step="100">
+      </label>
+      <label>
+        Sample days
+        <input id="sampleDays" type="number" value="7" min="1" max="30">
+      </label>
+      <label>
+        Seed
+        <input id="sampleSeed" type="number" value="42">
+      </label>
+      <button id="generateBtn">Generate Sample Data</button>
+      <button id="runBtn">Run Analysis</button>
+      <a id="reportLink" class="button secondary" href="/api/report/html" target="_blank" rel="noreferrer">Open HTML Report</a>
+    </section>
+
+    <section class="panel upload-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Upload CSV Session</h2>
+          <p>Create an isolated run folder, upload the six required CSV files, then run analysis on that uploaded dataset.</p>
+        </div>
+        <button id="createSessionBtn" type="button">Create Session</button>
+      </div>
+      <div class="session-row">
+        <label>
+          Session ID
+          <input id="sessionId" readonly placeholder="Create a session first">
+        </label>
+        <label>
+          Upload base directory
+          <input id="uploadBaseDir" value="runs">
+        </label>
+      </div>
+      <div class="upload-grid">
+        <label>bess_telemetry<input id="uploadBessTelemetry" type="file" accept=".csv"></label>
+        <label>site_load<input id="uploadSiteLoad" type="file" accept=".csv"></label>
+        <label>pv_generation<input id="uploadPvGeneration" type="file" accept=".csv"></label>
+        <label>tariff<input id="uploadTariff" type="file" accept=".csv"></label>
+        <label>ev_sessions<input id="uploadEvSessions" type="file" accept=".csv"></label>
+        <label>battery_config<input id="uploadBatteryConfig" type="file" accept=".csv"></label>
+      </div>
+      <div class="upload-actions">
+        <button id="uploadFilesBtn" type="button">Upload Selected Files</button>
+        <button id="refreshFilesBtn" type="button">Refresh File Status</button>
+        <span id="uploadStatus">No upload session yet.</span>
+      </div>
+    </section>
+
+    <section id="message" class="message" hidden></section>
+
+    <section class="grid metrics">
+      <article class="card">
+        <span>Validation</span>
+        <strong id="validationMetric">--</strong>
+        <small id="validationNote">Waiting for analysis</small>
+      </article>
+      <article class="card">
+        <span>Battery Risk</span>
+        <strong id="riskMetric">--</strong>
+        <small id="riskNote">Stress score</small>
+      </article>
+      <article class="card">
+        <span>Estimated SoH</span>
+        <strong id="sohMetric">--</strong>
+        <small>Simple telemetry estimate</small>
+      </article>
+      <article class="card">
+        <span>Degradation Cost</span>
+        <strong id="degradationMetric">--</strong>
+        <small>Telemetry-based cost</small>
+      </article>
+      <article class="card">
+        <span>Best Net Savings</span>
+        <strong id="netSavingsMetric">--</strong>
+        <small>Degradation-aware strategy</small>
+      </article>
+      <article class="card">
+        <span>Recommendation</span>
+        <strong id="recommendationMetric">--</strong>
+        <small>Dispatch decision</small>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Dispatch Charts</h2>
+      <div class="chart-grid">
+        <article class="chart-card">
+          <h3>State of Charge</h3>
+          <canvas id="socChart" width="520" height="220" aria-label="State of charge chart"></canvas>
+        </article>
+        <article class="chart-card">
+          <h3>Battery Power</h3>
+          <canvas id="powerChart" width="520" height="220" aria-label="Battery charge and discharge chart"></canvas>
+        </article>
+        <article class="chart-card">
+          <h3>Grid Import</h3>
+          <canvas id="gridChart" width="520" height="220" aria-label="Grid import chart"></canvas>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Strategy Comparison</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>Energy Cost</th>
+              <th>Gross Savings</th>
+              <th>Degradation Cost</th>
+              <th>Net Savings</th>
+              <th>Discharge Energy</th>
+              <th>Final SoC</th>
+            </tr>
+          </thead>
+          <tbody id="strategyRows">
+            <tr><td colspan="7">Run analysis to compare strategies.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="split">
+      <article class="panel">
+        <h2>Validation</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Dataset</th><th>Status</th><th>Errors</th><th>Warnings</th></tr>
+            </thead>
+            <tbody id="validationRows">
+              <tr><td colspan="4">No validation data yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Risk Reasons</h2>
+        <ul id="riskReasons">
+          <li>No risk reasons loaded yet.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Schedule Preview</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Charge</th>
+              <th>Discharge</th>
+              <th>SoC</th>
+              <th>Grid Import</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleRows">
+            <tr><td colspan="6">Run analysis to preview the optimized schedule.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/dashboard/app.js"></script>
+</body>
+</html>
