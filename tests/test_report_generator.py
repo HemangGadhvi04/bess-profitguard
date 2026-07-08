@@ -24,7 +24,7 @@ def test_report_generator_renders_core_sections(tmp_path: Path) -> None:
         degradation_stress_multiplier=degradation.stress_multiplier,
     )
 
-    report = build_project_report(validation_reports, health, degradation, dispatch)
+    report = build_project_report(validation_reports, health, degradation, dispatch, battery_config=dict(battery_config))
     html = render_html_report(report)
 
     assert "BESS ProfitGuard Dispatch Audit" in html
@@ -32,6 +32,8 @@ def test_report_generator_renders_core_sections(tmp_path: Path) -> None:
     assert "Battery Health" in html
     assert "Degradation Cost" in html
     assert "Dispatch Strategy Comparison" in html
+    assert "Assumptions and Limitations" in html
+    assert "Decision-support model, not OEM certification" in html
     assert "degradation_aware" in html
 
 

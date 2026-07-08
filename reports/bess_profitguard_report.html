@@ -23,21 +23,29 @@
 </head>
 <body>
   <h1>BESS ProfitGuard Dispatch Audit</h1>
-  <p class="subtitle">Generated at 2026-07-08T09:06:34. Battery-aware EMS audit for BESS and EV charging site operation.</p>
+  <p class="subtitle">Generated at 2026-07-08T18:41:33. Battery-aware EMS audit for BESS and EV charging site operation.</p>
 
   <div class="grid">
     <div class="card"><div class="label">Validation</div><div class="value">PASS</div><div class="note">Data quality gate</div></div>
 <div class="card"><div class="label">Battery Risk</div><div class="value">MEDIUM</div><div class="note">Stress score 56.79/100</div></div>
 <div class="card"><div class="label">SoH</div><div class="value">99.03%</div><div class="note">Simple health estimate</div></div>
 <div class="card"><div class="label">Degradation Cost</div><div class="value">₹7,280.31</div><div class="note">Telemetry-based lifetime cost</div></div>
-<div class="card"><div class="label">Best Net Savings</div><div class="value">₹2,273.73</div><div class="note">24-hour degradation-aware dispatch</div></div>
+<div class="card"><div class="label">Best Net Savings</div><div class="value">₹13,301.65</div><div class="note">24-hour degradation-aware dispatch</div></div>
 <div class="card"><div class="label">Recommendation</div><div class="value">degradation_aware</div><div class="note">Selected schedule basis</div></div>
   </div>
 
   <h2>Executive Recommendation</h2>
   <div class="callout">
-    <strong>Use degradation-aware dispatch; it protects net value after battery lifetime cost.</strong>
-    <p>Compared with energy-cost-only dispatch, the degradation-aware strategy changes battery use based on estimated lifetime cost.</p>
+    <strong>Recommended Strategy: degradation_aware</strong>
+    <p><strong>Why:</strong></p>
+    <ul>
+      <li>Net savings are higher than energy-cost-only dispatch.</li>
+      <li>Battery stress is reduced.</li>
+      <li>Reserve SoC is maintained.</li>
+      <li>Degradation cost is explicitly accounted for.</li>
+    </ul>
+    <p><strong>Action:</strong></p>
+    <p>Discharge only during the highest-value hours. Avoid low-value cycling.</p>
   </div>
 
   <h2>Data Validation</h2>
@@ -84,14 +92,41 @@
       <tr><th>Strategy</th><th>Status</th><th>Energy Cost</th><th>Gross Savings</th><th>Degradation Cost</th><th>Net Savings</th><th>Discharge Energy</th><th>Final SoC</th></tr>
     </thead>
     <tbody>
-      <tr><td>no_battery</td><td>calculated</td><td>₹19,876.87</td><td>₹0.00</td><td>₹0.00</td><td>₹0.00</td><td>0.00 kWh</td><td>n/a</td></tr>
-      <tr><td>energy_cost_only</td><td>optimal</td><td>₹16,132.00</td><td>₹3,744.87</td><td>₹1,486.40</td><td>₹2,258.47</td><td>535.48 kWh</td><td>50.00%</td></tr>
-      <tr><td>degradation_aware</td><td>optimal</td><td>₹16,250.79</td><td>₹3,626.08</td><td>₹1,352.36</td><td>₹2,273.73</td><td>487.19 kWh</td><td>50.00%</td></tr>
+      <tr><td>no_battery</td><td>calculated</td><td>₹60,542.19</td><td>₹0.00</td><td>₹0.00</td><td>₹0.00</td><td>0.00 kWh</td><td>n/a</td></tr>
+      <tr><td>energy_cost_only</td><td>optimal</td><td>₹46,191.27</td><td>₹14,350.92</td><td>₹1,107.86</td><td>₹13,243.06</td><td>399.11 kWh</td><td>50.00%</td></tr>
+      <tr><td>degradation_aware</td><td>optimal</td><td>₹46,647.21</td><td>₹13,894.98</td><td>₹593.33</td><td>₹13,301.65</td><td>213.75 kWh</td><td>50.00%</td></tr>
     </tbody>
   </table>
 
   <h2>Risk Reasons</h2>
   <ul><li>Temperature exceeded 35 C for 1.50 hours.</li><li>SoC stayed above 85% for 32.25 hours.</li><li>SoC stayed below 15% for 28.00 hours.</li><li>Dispatch is net-positive but margin is thin after degradation cost.</li><li>High-temperature exposure increased degradation cost.</li><li>High/low SoC dwell increased degradation cost.</li></ul>
+
+  <h2>Assumptions and Limitations</h2>
+  <table>
+    <tbody><tr><th>Battery chemistry</th><td>LFP</td></tr>
+<tr><th>Nameplate capacity</th><td>500.00 kWh</td></tr>
+<tr><th>Usable capacity</th><td>450.00 kWh</td></tr>
+<tr><th>Reserve SoC</th><td>20.00%</td></tr>
+<tr><th>Allowed SoC window</th><td>10.00% to 95.00%</td></tr>
+<tr><th>Max charge power</th><td>250.00 kW</td></tr>
+<tr><th>Max discharge power</th><td>250.00 kW</td></tr>
+<tr><th>Replacement cost</th><td>₹4,000,000.00</td></tr>
+<tr><th>Expected cycle life</th><td>5,000.00 cycles</td></tr>
+<tr><th>Forecast horizon</th><td>24-hour dispatch optimization</td></tr></tbody>
+  </table>
+
+  <h2>Sensitivity Analysis</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>Net Savings</th></tr></thead>
+    <tbody>
+      <tr><td>Base case</td><td>₹13,301.65</td></tr><tr><td>High degradation cost (+50%)</td><td>₹13,004.98</td></tr><tr><td>Low degradation cost (-50%)</td><td>₹13,797.00</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <strong>Decision-support model, not OEM certification.</strong>
+    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
+    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
+  </div>
 
   <h2>Schedule Preview</h2>
   <table>
@@ -100,14 +135,14 @@
 <tr><td>2026-01-05 01:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>87.79 kW</td><td>5.00/kWh</td></tr>
 <tr><td>2026-01-05 02:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>96.75 kW</td><td>5.00/kWh</td></tr>
 <tr><td>2026-01-05 03:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>101.68 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 04:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>108.55 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 05:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>117.02 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 06:00:00</td><td>0.00 kW</td><td>106.34 kW</td><td>27.61%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 07:00:00</td><td>0.00 kW</td><td>12.67 kW</td><td>24.95%</td><td>48.29 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 08:00:00</td><td>0.00 kW</td><td>11.93 kW</td><td>22.43%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 09:00:00</td><td>28.25 kW</td><td>0.00 kW</td><td>27.80%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 10:00:00</td><td>59.19 kW</td><td>0.00 kW</td><td>39.05%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 11:00:00</td><td>76.77 kW</td><td>0.00 kW</td><td>53.63%</td><td>0.00 kW</td><td>8.00/kWh</td></tr></tbody>
+<tr><td>2026-01-05 04:00:00</td><td>31.46 kW</td><td>0.00 kW</td><td>55.98%</td><td>140.01 kW</td><td>5.00/kWh</td></tr>
+<tr><td>2026-01-05 05:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>117.02 kW</td><td>5.00/kWh</td></tr>
+<tr><td>2026-01-05 06:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>106.34 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 07:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>71.97 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 08:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>22.93 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 09:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 10:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 11:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr></tbody>
   </table>
   <p class="small">Schedule preview is limited to the first 12 rows. Full schedule is available in the dispatch report object.</p>
 </body>

@@ -1,5 +1,7 @@
 # BESS ProfitGuard
 
+[![Tests](https://github.com/HemangGadhvi04/bess-profitguard/actions/workflows/tests.yml/badge.svg)](https://github.com/HemangGadhvi04/bess-profitguard/actions/workflows/tests.yml)
+
 Battery-aware EMS and BESS intelligence software for EV charging sites and commercial microgrids.
 
 The core product question:
@@ -44,6 +46,11 @@ This foundation supports the next modules:
 - [Project Charter](docs/09-project-charter.md)
 - [Commercial Positioning](docs/10-commercial-positioning.md)
 - [Product Improvement Roadmap](docs/11-product-improvement-roadmap.md)
+- [EV Depot Case Study](docs/case_study_ev_depot.md)
+- [Dispatch Optimization Model](docs/optimization_model.md)
+- [Degradation Cost Model](docs/degradation_model.md)
+- [System Limitations](docs/limitations.md)
+- [Master Roadmap PDF](<docs/strategy/Master Roadmap- University → Energy Infrastructure Software Company.pdf>)
 
 ## Project Structure
 
@@ -84,6 +91,18 @@ Install dependencies:
 
 ```bash
 python3 -m pip install -r requirements.txt
+```
+
+Run the complete demo pipeline:
+
+```bash
+python3 run_demo.py
+```
+
+This regenerates sample data, validates telemetry, calculates battery health, estimates degradation cost, compares dispatch strategies, and writes:
+
+```txt
+reports/bess_profitguard_report.html
 ```
 
 Generate sample datasets:
@@ -132,6 +151,15 @@ Run tests:
 
 ```bash
 python3 -m pytest -q
+```
+
+Or use the included Makefile:
+
+```bash
+make install
+make demo
+make test
+make serve
 ```
 
 Run the API server:
@@ -259,15 +287,16 @@ The generated report combines:
 - degradation-aware dispatch
 - executive recommendation
 - risk reasons
+- operating assumptions and model limitations
 - schedule preview
 
 Current sample result:
 
 ```txt
-No battery cost: ₹19,876.87
-Energy-cost-only net savings: ₹2,258.47
-Degradation-aware net savings: ₹2,273.73
-Recommendation: Use degradation-aware dispatch
+No battery cost: ₹60,542.19
+Energy-cost-only net savings: ₹13,243.06
+Degradation-aware net savings: ₹13,301.65
+Recommendation: Use degradation-aware dispatch; it protects net value after battery lifetime cost.
 ```
 
 ## API Endpoints
@@ -327,6 +356,22 @@ Supported upload `file_type` values:
 - `battery_config`
 
 After upload, use the returned `data_dir` with the existing validation, health, degradation, dispatch, and report endpoints.
+
+## Deployment
+
+**Backend (FastAPI)**
+The backend can be deployed on services like Render, Railway, or Fly.io using Docker or Python environments.
+Example using Uvicorn: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+
+**Frontend**
+The frontend HTML/JS/CSS files can be served statically via GitHub Pages, Vercel, Netlify, or directly by the FastAPI backend using `StaticFiles`.
+
+**GitHub "About" Section Update**
+To update the GitHub repository "About" section:
+1. Go to your GitHub repository page.
+2. Click the gear icon (⚙️) next to the "About" section.
+3. Set the **Description** to: "Degradation-aware BESS EMS for EV charging sites and commercial microgrids."
+4. Add relevant **Topics** such as: `bess`, `ems`, `ev-charging`, `microgrid`, `battery-degradation`, `fastapi`.
 
 ## Security Posture
 

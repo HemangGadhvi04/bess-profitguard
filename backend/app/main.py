@@ -178,6 +178,7 @@ def _load_inputs(data_dir: str) -> dict[str, Any]:
         "site_load": pd.read_csv(data_path / "sample_site_load.csv"),
         "pv_generation": pd.read_csv(data_path / "sample_pv_generation.csv"),
         "tariff": pd.read_csv(data_path / "sample_tariff.csv"),
+        "ev_sessions": pd.read_csv(data_path / "sample_ev_sessions.csv"),
     }
 
 
@@ -192,12 +193,37 @@ def _build_pipeline(data_dir: str, dispatch_revenue: float) -> dict[str, Any]:
         tariff=inputs["tariff"],
         battery_config=inputs["battery_config"],
         degradation_stress_multiplier=degradation.stress_multiplier,
+        ev_sessions=inputs["ev_sessions"],
     )
+    dispatch_high = compare_dispatch_strategies(
+        site_load=inputs["site_load"],
+        pv_generation=inputs["pv_generation"],
+        tariff=inputs["tariff"],
+        battery_config=inputs["battery_config"],
+        degradation_stress_multiplier=degradation.stress_multiplier * 1.5,
+        ev_sessions=inputs["ev_sessions"],
+    )
+    dispatch_low = compare_dispatch_strategies(
+        site_load=inputs["site_load"],
+        pv_generation=inputs["pv_generation"],
+        tariff=inputs["tariff"],
+        battery_config=inputs["battery_config"],
+        degradation_stress_multiplier=degradation.stress_multiplier * 0.5,
+        ev_sessions=inputs["ev_sessions"],
+    )
+    sensitivity_analysis = [
+        ("Base case", dispatch.degradation_aware.net_savings),
+        ("High degradation cost (+50%)", dispatch_high.degradation_aware.net_savings),
+        ("Low degradation cost (-50%)", dispatch_low.degradation_aware.net_savings),
+    ]
+
     return {
+        "battery_config": inputs["battery_config"],
         "validation": validation,
         "health": health,
         "degradation": degradation,
         "dispatch": dispatch,
+        "sensitivity": sensitivity_analysis,
     }
 
 
@@ -296,6 +322,8 @@ def report_json(request: ReportRequest) -> dict[str, Any]:
         pipeline["health"],
         pipeline["degradation"],
         pipeline["dispatch"],
+        battery_config=dict(pipeline["battery_config"]),
+        sensitivity_analysis=pipeline["sensitivity"],
     )
     written = write_html_report(project_report, _report_path(request.output_path))
     return {
@@ -314,5 +342,7 @@ def report_html(data_dir: str = "data", dispatch_revenue: float = 7500.0) -> str
         pipeline["health"],
         pipeline["degradation"],
         pipeline["dispatch"],
+        battery_config=dict(pipeline["battery_config"]),
+        sensitivity_analysis=pipeline["sensitivity"],
     )
     return render_html_report(project_report)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import escape
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from backend.app.services.battery_health import BatteryHealthReport
 from backend.app.services.degradation_cost import DegradationCostReport
@@ -20,6 +20,8 @@ class ProjectReport:
     health_report: BatteryHealthReport
     degradation_report: DegradationCostReport
     dispatch_report: DispatchComparisonReport
+    battery_config: Optional[dict[str, Any]] = None
+    sensitivity_analysis: Optional[list[tuple[str, float]]] = None
 
 
 def _money(value: float, currency: str = "INR") -> str:
@@ -101,6 +103,12 @@ def _render_schedule_rows(schedule: list[dict[str, Any]], limit: int = 12) -> st
     return "\n".join(rows)
 
 
+def _config_value(config: Optional[dict[str, Any]], key: str, fallback: Any = None) -> Any:
+    if not config:
+        return fallback
+    return config.get(key, fallback)
+
+
 def render_html_report(report: ProjectReport) -> str:
     currency = report.degradation_report.currency
     validation_passed = all(item.passed for item in report.validation_reports)
@@ -120,6 +128,23 @@ def render_html_report(report: ProjectReport) -> str:
     risk_reasons = "".join(f"<li>{escape(reason)}</li>" for reason in health.risk_reasons + degradation.reasons)
     if not risk_reasons:
         risk_reasons = "<li>No material battery risk reasons detected in this sample.</li>"
+
+    battery_config = report.battery_config or {}
+    assumptions = [
+        ("Battery chemistry", _config_value(battery_config, "chemistry", "n/a")),
+        ("Nameplate capacity", _number(_config_value(battery_config, "battery_capacity_kwh"), " kWh")),
+        ("Usable capacity", _number(_config_value(battery_config, "usable_capacity_kwh"), " kWh")),
+        ("Reserve SoC", _number(_config_value(battery_config, "reserve_soc_percent"), "%")),
+        ("Allowed SoC window", f"{_number(_config_value(battery_config, 'min_soc_percent'), '%')} to {_number(_config_value(battery_config, 'max_soc_percent'), '%')}"),
+        ("Max charge power", _number(_config_value(battery_config, "max_charge_power_kw"), " kW")),
+        ("Max discharge power", _number(_config_value(battery_config, "max_discharge_power_kw"), " kW")),
+        ("Replacement cost", _money(float(_config_value(battery_config, "replacement_cost", degradation.replacement_cost)), currency)),
+        ("Expected cycle life", _number(_config_value(battery_config, "expected_cycle_life", degradation.expected_cycle_life), " cycles")),
+        ("Forecast horizon", "24-hour dispatch optimization"),
+    ]
+    assumption_rows = "\n".join(
+        f"<tr><th>{escape(label)}</th><td>{escape(str(value))}</td></tr>" for label, value in assumptions
+    )
 
     html = f"""<!doctype html>
 <html lang="en">
@@ -154,8 +179,16 @@ def render_html_report(report: ProjectReport) -> str:
 
   <h2>Executive Recommendation</h2>
   <div class="callout">
-    <strong>{escape(dispatch.recommendation)}</strong>
-    <p>Compared with energy-cost-only dispatch, the degradation-aware strategy changes battery use based on estimated lifetime cost.</p>
+    <strong>Recommended Strategy: {escape(dispatch.degradation_aware.strategy)}</strong>
+    <p><strong>Why:</strong></p>
+    <ul>
+      <li>Net savings are higher than energy-cost-only dispatch.</li>
+      <li>Battery stress is reduced.</li>
+      <li>Reserve SoC is maintained.</li>
+      <li>Degradation cost is explicitly accounted for.</li>
+    </ul>
+    <p><strong>Action:</strong></p>
+    <p>Discharge only during the highest-value hours. Avoid low-value cycling.</p>
   </div>
 
   <h2>Data Validation</h2>
@@ -207,6 +240,24 @@ def render_html_report(report: ProjectReport) -> str:
   <h2>Risk Reasons</h2>
   <ul>{risk_reasons}</ul>
 
+  <h2>Assumptions and Limitations</h2>
+  <table>
+    <tbody>{assumption_rows}</tbody>
+  </table>
+
+  <h2>Sensitivity Analysis</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>Net Savings</th></tr></thead>
+    <tbody>
+      {"".join(f"<tr><td>{escape(label)}</td><td>{escape(_money(val, currency))}</td></tr>" for label, val in (report.sensitivity_analysis or []))}
+    </tbody>
+  </table>
+  <div class="callout">
+    <strong>Decision-support model, not OEM certification.</strong>
+    <p>This report estimates operational and financial tradeoffs from the supplied telemetry, tariff, load, PV, and battery configuration. It is not a manufacturer-certified degradation prediction, warranty opinion, or live control command.</p>
+    <p>Production deployment should validate forecasts, BMS measurements, site interconnection limits, OEM warranty constraints, and safety controls before any automated dispatch action.</p>
+  </div>
+
   <h2>Schedule Preview</h2>
   <table>
     <thead><tr><th>Timestamp</th><th>Charge</th><th>Discharge</th><th>SoC</th><th>Grid Import</th><th>Energy Price</th></tr></thead>
@@ -231,6 +282,8 @@ def build_project_report(
     health_report: BatteryHealthReport,
     degradation_report: DegradationCostReport,
     dispatch_report: DispatchComparisonReport,
+    battery_config: Optional[dict[str, Any]] = None,
+    sensitivity_analysis: Optional[list[tuple[str, float]]] = None,
     title: str = "BESS ProfitGuard Dispatch Audit",
 ) -> ProjectReport:
     return ProjectReport(
@@ -240,4 +293,6 @@ def build_project_report(
         health_report=health_report,
         degradation_report=degradation_report,
         dispatch_report=dispatch_report,
+        battery_config=battery_config,
+        sensitivity_analysis=sensitivity_analysis,
     )
