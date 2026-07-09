@@ -19,10 +19,17 @@ def main() -> None:
     report_path = Path("reports/bess_profitguard_report.html")
 
     files = generate_sample_data(data_dir, SampleDataConfig(days=7, seed=42))
+    print("Generated sample EV depot data")
+
     validation_reports = validate_generated_dataset(data_dir)
+    print("Validated data quality")
+
     battery_config = load_battery_config(files["sample_battery_config"])
     health_report = calculate_battery_health(pd.read_csv(files["sample_bess_telemetry"]), battery_config)
+    print("Calculated battery health")
+
     degradation_report = calculate_degradation_cost(health_report, dict(battery_config), dispatch_revenue=7_500.0)
+    print("Calculated degradation cost")
     
     site_load = pd.read_csv(files["sample_site_load"])
     pv_generation = pd.read_csv(files["sample_pv_generation"])
@@ -37,6 +44,8 @@ def main() -> None:
         degradation_stress_multiplier=degradation_report.stress_multiplier,
         ev_sessions=ev_sessions,
     )
+    print("Compared dispatch strategies")
+
     dispatch_high = compare_dispatch_strategies(
         site_load=site_load,
         pv_generation=pv_generation,
@@ -68,8 +77,8 @@ def main() -> None:
         sensitivity_analysis=sensitivity,
     )
     written = write_html_report(report, report_path)
+    print("Generated audit report")
 
-    print("BESS ProfitGuard demo completed.")
     print()
     print(f"Validation: {'PASS' if all(item.passed for item in validation_reports) else 'FAIL'}")
     print(f"No battery cost: {money(dispatch_report.baseline.energy_cost)}")

@@ -8,6 +8,16 @@ The core product question:
 
 > Should the battery operate right now, or will the lifetime damage cost more than the money earned?
 
+## Demo Preview
+
+Dashboard after running the sample EV depot analysis:
+
+![BESS ProfitGuard dashboard](docs/images/dashboard.jpg)
+
+Generated commercial audit report:
+
+![BESS ProfitGuard audit report](docs/images/audit-report.jpg)
+
 ## Current Build
 
 The first working milestone is the data foundation for a degradation-aware BESS/EV charging EMS:
