@@ -10,6 +10,7 @@ test:
 	python3 -m pytest -q
 
 lint:
+	python3 scripts/validate_formatting.py
 	python3 -m py_compile backend/app/main.py backend/app/services/*.py *.py
 
 serve:
