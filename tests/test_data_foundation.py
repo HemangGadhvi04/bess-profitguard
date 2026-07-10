@@ -90,7 +90,7 @@ def test_degradation_aware_respects_soc_limits(tmp_path: Path) -> None:
 def test_ev_infeasible_session_warning(tmp_path: Path) -> None:
     written = generate_sample_data(tmp_path, SampleDataConfig(days=1, seed=42))
     ev_df = pd.read_csv(written["sample_ev_sessions"])
-    ev_df.loc[0, "energy_required_kwh"] = 500.0
+    ev_df.loc[0, "required_energy_kwh"] = 500.0
     ev_df.to_csv(written["sample_ev_sessions"], index=False)
 
     reports = validate_generated_dataset(tmp_path)

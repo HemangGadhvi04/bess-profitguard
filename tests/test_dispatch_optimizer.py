@@ -48,3 +48,39 @@ def test_degradation_aware_dispatch_uses_no_more_energy_than_cost_only_when_degr
     )
 
     assert report.degradation_aware.total_discharge_energy_kwh <= report.energy_cost_only.total_discharge_energy_kwh
+
+
+def test_dispatch_report_includes_ev_readiness_and_operating_mode(tmp_path: Path) -> None:
+    generate_sample_data(tmp_path, SampleDataConfig(days=2, seed=45))
+    battery_config = load_battery_config(tmp_path / "sample_battery_config.csv")
+
+    report = compare_dispatch_strategies(
+        site_load=pd.read_csv(tmp_path / "sample_site_load.csv"),
+        pv_generation=pd.read_csv(tmp_path / "sample_pv_generation.csv"),
+        tariff=pd.read_csv(tmp_path / "sample_tariff.csv"),
+        battery_config=battery_config,
+        ev_sessions=pd.read_csv(tmp_path / "sample_ev_sessions.csv"),
+        operating_mode="battery_protection_mode",
+    )
+
+    assert report.operating_mode == "battery_protection_mode"
+    assert report.degradation_aware.ev_readiness_percent == 100.0
+    assert report.degradation_aware.priority_ev_readiness_percent == 100.0
+    assert report.degradation_aware.unmet_ev_energy_kwh == 0.0
+
+
+def test_optimizer_respects_reserve_soc(tmp_path: Path) -> None:
+    generate_sample_data(tmp_path, SampleDataConfig(days=2, seed=46))
+    battery_config = load_battery_config(tmp_path / "sample_battery_config.csv")
+
+    report = compare_dispatch_strategies(
+        site_load=pd.read_csv(tmp_path / "sample_site_load.csv"),
+        pv_generation=pd.read_csv(tmp_path / "sample_pv_generation.csv"),
+        tariff=pd.read_csv(tmp_path / "sample_tariff.csv"),
+        battery_config=battery_config,
+        ev_sessions=pd.read_csv(tmp_path / "sample_ev_sessions.csv"),
+    )
+
+    reserve_soc = max(float(battery_config["min_soc_percent"]), float(battery_config["reserve_soc_percent"]))
+    assert report.schedule
+    assert min(step["soc_percent"] for step in report.schedule) >= reserve_soc

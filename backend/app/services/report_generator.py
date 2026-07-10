@@ -9,6 +9,8 @@ from typing import Any, Optional
 from backend.app.services.battery_health import BatteryHealthReport
 from backend.app.services.degradation_cost import DegradationCostReport
 from backend.app.services.dispatch_optimizer import DispatchComparisonReport, StrategySummary
+from backend.app.services.demand_charge import compare_demand_charge
+from backend.app.services.operating_modes import get_operating_mode
 from backend.app.services.telemetry_validator import ValidationReport
 
 
@@ -84,11 +86,13 @@ def _render_strategy_row(strategy: StrategySummary, currency: str) -> str:
         f"<td>{escape(strategy.strategy)}</td>"
         f"<td>{escape(strategy.status)}</td>"
         f"<td>{escape(_money(strategy.energy_cost, currency))}</td>"
+        f"<td>{escape(_money(strategy.demand_charge_cost, currency))}</td>"
         f"<td>{escape(_money(strategy.gross_savings, currency))}</td>"
         f"<td>{escape(_money(strategy.degradation_cost, currency))}</td>"
         f"<td>{escape(_money(strategy.net_savings, currency))}</td>"
+        f"<td>{_percent(strategy.ev_readiness_percent)}</td>"
+        f"<td>{_number(strategy.peak_grid_import_kw, ' kW')}</td>"
         f"<td>{_number(strategy.total_discharge_energy_kwh, ' kWh')}</td>"
-        f"<td>{_number(strategy.final_soc_percent, '%')}</td>"
         "</tr>"
     )
 
@@ -162,6 +166,17 @@ def render_html_report(report: ProjectReport) -> str:
     health = report.health_report
     degradation = report.degradation_report
     dispatch = report.dispatch_report
+    mode_config = get_operating_mode(dispatch.operating_mode)
+    demand_rate = (
+        dispatch.baseline.demand_charge_cost / dispatch.baseline.peak_grid_import_kw
+        if dispatch.baseline.peak_grid_import_kw
+        else 0.0
+    )
+    demand_metrics = compare_demand_charge(
+        dispatch.baseline.peak_grid_import_kw,
+        dispatch.degradation_aware.peak_grid_import_kw,
+        demand_rate,
+    )
     data_quality_score = _data_quality_score(report.validation_reports)
     confidence_score, confidence_label = _confidence_score(data_quality_score, health, dispatch)
     daily_net_savings = dispatch.degradation_aware.net_savings
@@ -177,6 +192,7 @@ def render_html_report(report: ProjectReport) -> str:
         ("SoH", _number(health.estimated_soh_percent, "%"), "Simple health estimate"),
         ("Monthly Net Savings", _money(monthly_net_savings, currency), "30-day projection"),
         ("Peak Reduction", _number(peak_reduction_kw, " kW"), "Demand-charge exposure"),
+        ("EV Readiness", _percent(dispatch.degradation_aware.ev_readiness_percent), "Departure reliability"),
         ("Confidence", f"{confidence_label} ({_percent(confidence_score)})", "Audit confidence"),
     ]
 
@@ -196,6 +212,7 @@ def render_html_report(report: ProjectReport) -> str:
         ("Replacement cost", _money(float(_config_value(battery_config, "replacement_cost", degradation.replacement_cost)), currency)),
         ("Expected cycle life", _number(_config_value(battery_config, "expected_cycle_life", degradation.expected_cycle_life), " cycles")),
         ("Forecast horizon", "24-hour dispatch optimization"),
+        ("Operating mode", mode_config.label),
     ]
     assumption_rows = "\n".join(
         f"<tr><th>{escape(label)}</th><td>{escape(str(value))}</td></tr>" for label, value in assumptions
@@ -247,8 +264,10 @@ def render_html_report(report: ProjectReport) -> str:
   <div class="callout">
     <strong>Recommended Strategy: {escape(dispatch.degradation_aware.strategy)}</strong>
     <p>{escape(dispatch.recommendation)}</p>
+    <p><strong>Operating mode:</strong> {escape(mode_config.label)}. {escape(mode_config.description)}</p>
     <p><strong>Estimated 24-hour net savings:</strong> {_money(daily_net_savings, currency)}. <strong>Projected monthly net savings:</strong> {_money(monthly_net_savings, currency)}.</p>
     <p><strong>Peak demand reduced from</strong> {_number(dispatch.baseline.peak_grid_import_kw, " kW")} <strong>to</strong> {_number(dispatch.degradation_aware.peak_grid_import_kw, " kW")}. <strong>Modeled demand-charge savings:</strong> {_money(demand_charge_savings, currency)}.</p>
+    <p><strong>EV readiness:</strong> {_percent(dispatch.degradation_aware.ev_readiness_percent)} overall and {_percent(dispatch.degradation_aware.priority_ev_readiness_percent)} for priority EVs.</p>
   </div>
 
   <h2>Recommended Operating Policy</h2>
@@ -305,7 +324,7 @@ def render_html_report(report: ProjectReport) -> str:
   <h2>Dispatch Strategy Comparison</h2>
   <table>
     <thead>
-      <tr><th>Strategy</th><th>Status</th><th>Energy Cost</th><th>Gross Savings</th><th>Degradation Cost</th><th>Net Savings</th><th>Discharge Energy</th><th>Final SoC</th></tr>
+      <tr><th>Strategy</th><th>Status</th><th>Energy Cost</th><th>Demand Charge</th><th>Gross Savings</th><th>Degradation Cost</th><th>Net Savings</th><th>EV Readiness</th><th>Peak Demand</th><th>Discharge Energy</th></tr>
     </thead>
     <tbody>
       {_render_strategy_row(dispatch.baseline, currency)}
@@ -321,7 +340,9 @@ def render_html_report(report: ProjectReport) -> str:
       <tr><th>Projected Monthly Net Savings</th><td>{_money(monthly_net_savings, currency)}</td></tr>
       <tr><th>Projected Annual Net Savings</th><td>{_money(annual_net_savings, currency)}</td></tr>
       <tr><th>Demand Charge Savings</th><td>{_money(demand_charge_savings, currency)}</td></tr>
+      <tr><th>Monthly Peak-Shaving Savings</th><td>{_money(demand_metrics.monthly_peak_shaving_savings, currency)}</td></tr>
       <tr><th>Peak Demand Reduction</th><td>{_number(peak_reduction_kw, " kW")}</td></tr>
+      <tr><th>Unmet EV Energy</th><td>{_number(dispatch.degradation_aware.unmet_ev_energy_kwh, " kWh")}</td></tr>
     </tbody>
   </table>
 

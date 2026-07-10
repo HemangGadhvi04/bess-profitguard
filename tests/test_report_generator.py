@@ -35,6 +35,7 @@ def test_report_generator_renders_core_sections(tmp_path: Path) -> None:
     assert "Revenue vs Degradation Cost" in html
     assert "Dispatch Strategy Comparison" in html
     assert "Monthly Net Savings" in html
+    assert "Projected Monthly Net Savings" in html
     assert "Battery Stress Events" in html
     assert "Recommended Operating Policy" in html
     assert "Assumptions and Limitations" in html

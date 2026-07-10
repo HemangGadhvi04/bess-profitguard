@@ -7,6 +7,10 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import linprog
 
+from backend.app.services.demand_charge import calculate_demand_charge_cost
+from backend.app.services.ev_scheduler import summarize_ev_readiness
+from backend.app.services.operating_modes import OperatingModeConfig, get_operating_mode
+
 
 @dataclass(frozen=True)
 class DispatchOptimizerConfig:
@@ -31,6 +35,10 @@ class StrategySummary:
     status: str
     peak_grid_import_kw: float = 0.0
     demand_charge_cost: float = 0.0
+    peak_shaving_savings: float = 0.0
+    ev_readiness_percent: float = 100.0
+    priority_ev_readiness_percent: float = 100.0
+    unmet_ev_energy_kwh: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -45,6 +53,10 @@ class StrategySummary:
             "status": self.status,
             "peak_grid_import_kw": self.peak_grid_import_kw,
             "demand_charge_cost": self.demand_charge_cost,
+            "peak_shaving_savings": self.peak_shaving_savings,
+            "ev_readiness_percent": self.ev_readiness_percent,
+            "priority_ev_readiness_percent": self.priority_ev_readiness_percent,
+            "unmet_ev_energy_kwh": self.unmet_ev_energy_kwh,
         }
 
 
@@ -55,6 +67,7 @@ class DispatchComparisonReport:
     degradation_aware: StrategySummary
     recommendation: str
     schedule: list[dict[str, Any]]
+    operating_mode: str = "profit_mode"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +76,7 @@ class DispatchComparisonReport:
             "degradation_aware": self.degradation_aware.to_dict(),
             "recommendation": self.recommendation,
             "schedule": self.schedule,
+            "operating_mode": self.operating_mode,
         }
 
 
@@ -95,6 +109,18 @@ def _prepare_site_frame(
 
 def _battery_config_value(config: pd.Series | dict[str, Any], key: str) -> float:
     return float(dict(config)[key])
+
+
+def _filter_ev_sessions_to_horizon(site_frame: pd.DataFrame, ev_sessions: pd.DataFrame | None) -> pd.DataFrame | None:
+    if ev_sessions is None or ev_sessions.empty:
+        return ev_sessions
+    start = pd.to_datetime(site_frame["timestamp"].min())
+    end = pd.to_datetime(site_frame["timestamp"].max()) + (site_frame["timestamp"].iloc[1] - site_frame["timestamp"].iloc[0])
+    sessions = ev_sessions.copy()
+    arrival = pd.to_datetime(sessions["arrival_time"])
+    departure = pd.to_datetime(sessions["departure_time"])
+    due_in_horizon = (arrival < end) & (departure > start) & (departure <= end)
+    return sessions.loc[due_in_horizon].reset_index(drop=True)
 
 
 def calculate_no_battery_profile(
@@ -131,7 +157,7 @@ def calculate_no_battery_profile(
     
     peak_import = grid_import.max() if len(grid_import) > 0 else 0
     # Average demand charge over the period for calculation
-    demand_cost = peak_import * site_frame["demand_charge_per_kw"].mean()
+    demand_cost = calculate_demand_charge_cost(peak_import, site_frame["demand_charge_per_kw"].mean())
     
     cost = energy_cost + demand_cost
     return round(float(cost), 2), round(float(peak_import), 3), round(float(demand_cost), 2)
@@ -150,7 +176,9 @@ def _solve_battery_dispatch(
     baseline_cost: float,
     optimizer_config: DispatchOptimizerConfig,
     ev_sessions: pd.DataFrame | None = None,
+    mode_config: OperatingModeConfig | None = None,
 ) -> tuple[StrategySummary, list[dict[str, Any]]]:
+    mode_config = mode_config or get_operating_mode("profit_mode")
     n = len(site_frame)
     dt_hours = pd.Timedelta(optimizer_config.freq) / pd.Timedelta(hours=1)
     capacity_kwh = _battery_config_value(battery_config, "battery_capacity_kwh")
@@ -193,7 +221,7 @@ def _solve_battery_dispatch(
     # Penalize unmet EV energy heavily
     if has_ev:
         for j in range(m):
-            c[unmet_ev_offset + j] = 1000.0  # Large penalty per kWh
+            c[unmet_ev_offset + j] = mode_config.ev_unmet_penalty_per_kwh
 
     bounds = (
         [(0, max_charge_kw)] * n
@@ -304,6 +332,10 @@ def _solve_battery_dispatch(
             status=result.message,
             peak_grid_import_kw=0.0,
             demand_charge_cost=0.0,
+            peak_shaving_savings=0.0,
+            ev_readiness_percent=0.0 if has_ev else 100.0,
+            priority_ev_readiness_percent=0.0 if has_ev else 100.0,
+            unmet_ev_energy_kwh=0.0,
         )
         return summary, []
 
@@ -316,9 +348,12 @@ def _solve_battery_dispatch(
     peak_import_val = values[peak_offset]
     
     total_ev_charge = np.zeros(n)
+    unmet_ev = []
     if has_ev:
         for j in range(m):
             total_ev_charge += values[ev_offset + j * n : ev_offset + (j + 1) * n]
+        unmet_ev = [round(float(value), 6) for value in values[unmet_ev_offset : unmet_ev_offset + m]]
+    ev_readiness = summarize_ev_readiness(ev_sessions, unmet_ev)
 
     energy_cost = float(
         (
@@ -362,6 +397,9 @@ def _solve_battery_dispatch(
         status="optimal",
         peak_grid_import_kw=round(float(peak_import_val), 3),
         demand_charge_cost=round(float(peak_import_val * mean_demand_charge), 2),
+        ev_readiness_percent=ev_readiness.readiness_percent,
+        priority_ev_readiness_percent=ev_readiness.priority_readiness_percent,
+        unmet_ev_energy_kwh=ev_readiness.unmet_energy_kwh,
     )
     return summary, schedule
 
@@ -374,12 +412,15 @@ def compare_dispatch_strategies(
     degradation_stress_multiplier: float = 1.0,
     optimizer_config: DispatchOptimizerConfig | None = None,
     ev_sessions: pd.DataFrame | None = None,
+    operating_mode: str = "profit_mode",
 ) -> DispatchComparisonReport:
     optimizer_config = optimizer_config or DispatchOptimizerConfig()
+    mode_config = get_operating_mode(operating_mode)
     if "demand_charge_per_kw" not in tariff.columns:
         tariff["demand_charge_per_kw"] = 0.0
     
     site_frame = _prepare_site_frame(site_load, pv_generation, tariff, optimizer_config)
+    ev_sessions = _filter_ev_sessions_to_horizon(site_frame, ev_sessions)
     dt_hours = pd.Timedelta(optimizer_config.freq) / pd.Timedelta(hours=1)
     
     baseline_cost, baseline_peak, baseline_demand_cost = calculate_no_battery_profile(site_frame, dt_hours, ev_sessions)
@@ -395,6 +436,9 @@ def compare_dispatch_strategies(
         status="calculated",
         peak_grid_import_kw=baseline_peak,
         demand_charge_cost=baseline_demand_cost,
+        ev_readiness_percent=100.0,
+        priority_ev_readiness_percent=100.0,
+        unmet_ev_energy_kwh=0.0,
     )
 
     usable_capacity_kwh = _battery_config_value(battery_config, "usable_capacity_kwh")
@@ -410,24 +454,30 @@ def compare_dispatch_strategies(
         baseline_cost=baseline_cost,
         optimizer_config=optimizer_config,
         ev_sessions=ev_sessions,
+        mode_config=mode_config,
     )
     cost_only.degradation_cost = round(cost_only.total_discharge_energy_kwh * degradation_cost_per_kwh, 2)
     cost_only.net_savings = round(cost_only.gross_savings - cost_only.degradation_cost, 2)
+    cost_only.peak_shaving_savings = round(max(0.0, baseline.demand_charge_cost - cost_only.demand_charge_cost), 2)
 
     degradation_aware, schedule = _solve_battery_dispatch(
         site_frame=site_frame,
         battery_config=battery_config,
-        degradation_cost_per_kwh=degradation_cost_per_kwh,
+        degradation_cost_per_kwh=degradation_cost_per_kwh * mode_config.degradation_penalty_multiplier,
         strategy_name="degradation_aware",
         baseline_cost=baseline_cost,
         optimizer_config=optimizer_config,
         ev_sessions=ev_sessions,
+        mode_config=mode_config,
     )
+    degradation_aware.peak_shaving_savings = round(max(0.0, baseline.demand_charge_cost - degradation_aware.demand_charge_cost), 2)
 
     if degradation_aware.status != "optimal":
         recommendation = "Optimization failed; inspect inputs."
+    elif degradation_aware.ev_readiness_percent < 100:
+        recommendation = "EV readiness risk detected; use EV readiness mode or inspect infeasible sessions."
     elif degradation_aware.net_savings >= cost_only.net_savings:
-        recommendation = "Use degradation-aware dispatch; it protects net value after battery lifetime cost."
+        recommendation = f"Use degradation-aware dispatch in {mode_config.label}; it protects net value after battery lifetime cost."
     else:
         recommendation = "Energy-cost-only dispatch has higher modeled net value for this horizon; inspect degradation assumptions."
 
@@ -437,4 +487,5 @@ def compare_dispatch_strategies(
         degradation_aware=degradation_aware,
         recommendation=recommendation,
         schedule=schedule,
+        operating_mode=mode_config.name,
     )
