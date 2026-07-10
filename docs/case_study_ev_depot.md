@@ -15,17 +15,17 @@ This case study shows the core BESS ProfitGuard value proposition: energy arbitr
 
 ## Sample Result
 
-| Strategy | Energy Cost | Gross Savings | Degradation Cost | Net Savings | Discharge Energy | Final SoC |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| No battery | ₹60,542.19 | ₹0.00 | ₹0.00 | ₹0.00 | 0.00 kWh | n/a |
-| Energy-cost-only dispatch | ₹46,191.27 | ₹14,350.92 | ₹1,107.86 | ₹13,243.06 | 399.11 kWh | 50.00% |
-| Degradation-aware dispatch | ₹46,647.21 | ₹13,894.98 | ₹593.33 | ₹13,301.65 | 213.75 kWh | 50.00% |
+| Strategy | Energy Cost | Demand Charge | Gross Savings | Degradation Cost | Net Savings | EV Readiness | Peak Demand | Discharge Energy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| No battery | ₹49,754.66 | ₹25,274.91 | ₹0.00 | ₹0.00 | ₹0.00 | 100.00% | 269.60 kW | 0.00 kWh |
+| Energy-cost-only dispatch | ₹39,474.74 | ₹18,084.80 | ₹10,279.92 | ₹1,113.27 | ₹9,166.65 | 100.00% | 192.91 kW | 401.06 kWh |
+| Degradation-aware dispatch | ₹39,901.32 | ₹18,084.80 | ₹9,853.34 | ₹631.89 | ₹9,221.45 | 100.00% | 192.91 kW | 227.64 kWh |
 
 ## Interpretation
 
 The energy-cost-only optimizer produces the lowest electricity bill and the highest gross savings. However, it cycles the battery harder. Once degradation cost is included, the extra arbitrage is not worth the additional lifetime damage.
 
-The degradation-aware strategy discharges about 185 kWh less during the day, accepts a slightly higher energy bill, and still produces higher net savings after battery wear. This is the commercial point of the product: it does not just ask whether dispatch is profitable today; it asks whether dispatch is still profitable after battery lifetime cost.
+The degradation-aware strategy discharges about 173 kWh less during the day, accepts a slightly higher energy bill, keeps EV readiness at 100%, and still produces higher net savings after battery wear. This is the commercial point of the product: it does not just ask whether dispatch is profitable today; it asks whether dispatch is still profitable after battery lifetime cost and depot readiness are counted.
 
 ## Buyer-Relevant Recommendation
 

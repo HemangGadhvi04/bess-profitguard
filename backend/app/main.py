@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from uuid import uuid4
 
 import pandas as pd
@@ -54,15 +54,20 @@ class DegradationRequest(StrictBaseModel):
     dispatch_revenue: float = 7500.0
 
 
+OperatingModeName = Literal["profit_mode", "battery_protection_mode", "ev_readiness_mode"]
+
+
 class DispatchRequest(StrictBaseModel):
     data_dir: str = "data"
     dispatch_revenue: float = 7500.0
+    operating_mode: OperatingModeName = "profit_mode"
 
 
 class ReportRequest(StrictBaseModel):
     data_dir: str = "data"
     output_path: str = "reports/bess_profitguard_report.html"
     dispatch_revenue: float = 7500.0
+    operating_mode: OperatingModeName = "profit_mode"
 
 
 class CreateSessionRequest(StrictBaseModel):
@@ -182,7 +187,7 @@ def _load_inputs(data_dir: str) -> dict[str, Any]:
     }
 
 
-def _build_pipeline(data_dir: str, dispatch_revenue: float) -> dict[str, Any]:
+def _build_pipeline(data_dir: str, dispatch_revenue: float, operating_mode: str = "profit_mode") -> dict[str, Any]:
     inputs = _load_inputs(data_dir)
     validation = validate_generated_dataset(data_dir)
     health = calculate_battery_health(inputs["telemetry"], inputs["battery_config"])
@@ -194,6 +199,7 @@ def _build_pipeline(data_dir: str, dispatch_revenue: float) -> dict[str, Any]:
         battery_config=inputs["battery_config"],
         degradation_stress_multiplier=degradation.stress_multiplier,
         ev_sessions=inputs["ev_sessions"],
+        operating_mode=operating_mode,
     )
     dispatch_high = compare_dispatch_strategies(
         site_load=inputs["site_load"],
@@ -202,6 +208,7 @@ def _build_pipeline(data_dir: str, dispatch_revenue: float) -> dict[str, Any]:
         battery_config=inputs["battery_config"],
         degradation_stress_multiplier=degradation.stress_multiplier * 1.5,
         ev_sessions=inputs["ev_sessions"],
+        operating_mode=operating_mode,
     )
     dispatch_low = compare_dispatch_strategies(
         site_load=inputs["site_load"],
@@ -210,6 +217,7 @@ def _build_pipeline(data_dir: str, dispatch_revenue: float) -> dict[str, Any]:
         battery_config=inputs["battery_config"],
         degradation_stress_multiplier=degradation.stress_multiplier * 0.5,
         ev_sessions=inputs["ev_sessions"],
+        operating_mode=operating_mode,
     )
     sensitivity_analysis = [
         ("Base case", dispatch.degradation_aware.net_savings),
@@ -310,13 +318,13 @@ def degradation_cost_report(request: DegradationRequest) -> dict[str, Any]:
 
 @app.post("/api/dispatch")
 def dispatch_report(request: DispatchRequest) -> dict[str, Any]:
-    pipeline = _build_pipeline(request.data_dir, request.dispatch_revenue)
+    pipeline = _build_pipeline(request.data_dir, request.dispatch_revenue, request.operating_mode)
     return pipeline["dispatch"].to_dict()
 
 
 @app.post("/api/report")
 def report_json(request: ReportRequest) -> dict[str, Any]:
-    pipeline = _build_pipeline(request.data_dir, request.dispatch_revenue)
+    pipeline = _build_pipeline(request.data_dir, request.dispatch_revenue, request.operating_mode)
     project_report = build_project_report(
         pipeline["validation"],
         pipeline["health"],
@@ -335,8 +343,8 @@ def report_json(request: ReportRequest) -> dict[str, Any]:
 
 
 @app.get("/api/report/html", response_class=HTMLResponse)
-def report_html(data_dir: str = "data", dispatch_revenue: float = 7500.0) -> str:
-    pipeline = _build_pipeline(data_dir, dispatch_revenue)
+def report_html(data_dir: str = "data", dispatch_revenue: float = 7500.0, operating_mode: str = "profit_mode") -> str:
+    pipeline = _build_pipeline(data_dir, dispatch_revenue, operating_mode)
     project_report = build_project_report(
         pipeline["validation"],
         pipeline["health"],

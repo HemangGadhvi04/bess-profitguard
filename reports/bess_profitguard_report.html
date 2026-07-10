@@ -23,23 +23,26 @@
 </head>
 <body>
   <h1>BESS ProfitGuard Dispatch Audit</h1>
-  <p class="subtitle">Generated at 2026-07-08T18:52:54. Battery-aware EMS audit for BESS and EV charging site operation.</p>
+  <p class="subtitle">Generated at 2026-07-09T09:18:18. Battery-aware EMS audit for BESS and EV charging site operation.</p>
 
   <div class="grid">
-    <div class="card"><div class="label">Data Quality</div><div class="value">87.9%</div><div class="note">Validation confidence</div></div>
+    <div class="card"><div class="label">Data Quality</div><div class="value">91.9%</div><div class="note">Validation confidence</div></div>
 <div class="card"><div class="label">Battery Risk</div><div class="value">MEDIUM</div><div class="note">Stress score 56.79/100</div></div>
 <div class="card"><div class="label">SoH</div><div class="value">99.03%</div><div class="note">Simple health estimate</div></div>
-<div class="card"><div class="label">Monthly Net Savings</div><div class="value">₹399,049.50</div><div class="note">30-day projection</div></div>
-<div class="card"><div class="label">Peak Reduction</div><div class="value">106.69 kW</div><div class="note">Demand-charge exposure</div></div>
-<div class="card"><div class="label">Confidence</div><div class="value">Medium (79.9%)</div><div class="note">Audit confidence</div></div>
+<div class="card"><div class="label">Monthly Net Savings</div><div class="value">₹276,643.50</div><div class="note">30-day projection</div></div>
+<div class="card"><div class="label">Peak Reduction</div><div class="value">76.69 kW</div><div class="note">Demand-charge exposure</div></div>
+<div class="card"><div class="label">EV Readiness</div><div class="value">100.0%</div><div class="note">Departure reliability</div></div>
+<div class="card"><div class="label">Confidence</div><div class="value">Medium (83.9%)</div><div class="note">Audit confidence</div></div>
   </div>
 
   <h2>Executive Summary</h2>
   <div class="callout">
     <strong>Recommended Strategy: degradation_aware</strong>
-    <p>Use degradation-aware dispatch; it protects net value after battery lifetime cost.</p>
-    <p><strong>Estimated 24-hour net savings:</strong> ₹13,301.65. <strong>Projected monthly net savings:</strong> ₹399,049.50.</p>
-    <p><strong>Peak demand reduced from</strong> 338.73 kW <strong>to</strong> 232.04 kW. <strong>Modeled demand-charge savings:</strong> ₹10,002.38.</p>
+    <p>Use degradation-aware dispatch in Profit Mode; it protects net value after battery lifetime cost.</p>
+    <p><strong>Operating mode:</strong> Profit Mode. Maximize net savings while accounting for degradation and EV deadlines.</p>
+    <p><strong>Estimated 24-hour net savings:</strong> ₹9,221.45. <strong>Projected monthly net savings:</strong> ₹276,643.50.</p>
+    <p><strong>Peak demand reduced from</strong> 269.60 kW <strong>to</strong> 192.91 kW. <strong>Modeled demand-charge savings:</strong> ₹7,190.11.</p>
+    <p><strong>EV readiness:</strong> 100.0% overall and 100.0% for priority EVs.</p>
   </div>
 
   <h2>Recommended Operating Policy</h2>
@@ -60,12 +63,13 @@
 <tr><th>Max discharge power</th><td>250.00 kW</td></tr>
 <tr><th>Replacement cost</th><td>₹4,000,000.00</td></tr>
 <tr><th>Expected cycle life</th><td>5,000.00 cycles</td></tr>
-<tr><th>Forecast horizon</th><td>24-hour dispatch optimization</td></tr></tbody>
+<tr><th>Forecast horizon</th><td>24-hour dispatch optimization</td></tr>
+<tr><th>Operating mode</th><td>Profit Mode</td></tr></tbody>
   </table>
 
   <h2>Data Quality Score</h2>
   <div class="callout">
-    <strong>87.9% data quality score</strong>
+    <strong>91.9% data quality score</strong>
     <p>Validation status: PASS. Confidence is medium because model confidence combines data quality, battery stress, and optimizer status.</p>
   </div>
   <table>
@@ -74,7 +78,7 @@
 <tr><td>site_load</td><td>672</td><td class="ok">PASS</td><td>0</td><td>0</td><td>None</td></tr>
 <tr><td>pv_generation</td><td>672</td><td class="ok">PASS</td><td>0</td><td>0</td><td>None</td></tr>
 <tr><td>tariff</td><td>672</td><td class="ok">PASS</td><td>0</td><td>0</td><td>None</td></tr>
-<tr><td>ev_sessions</td><td>140</td><td class="ok">PASS</td><td>0</td><td>1</td><td>ev_energy_infeasible (25)</td></tr></tbody>
+<tr><td>ev_sessions</td><td>140</td><td class="ok">PASS</td><td>0</td><td>0</td><td>None</td></tr></tbody>
   </table>
 
   <h2>Battery Health Summary</h2>
@@ -101,7 +105,7 @@
       <tr><th>Estimated Degradation Cost</th><td>₹7,280.31</td></tr>
       <tr><th>Dispatch Revenue Assumption</th><td>₹7,500.00</td></tr>
       <tr><th>Net Benefit</th><td>₹219.69</td></tr>
-      <tr><th>Cost-Only Extra Degradation</th><td>₹514.53</td></tr>
+      <tr><th>Cost-Only Extra Degradation</th><td>₹481.38</td></tr>
       <tr><th>Standalone Recommendation</th><td>dispatch_with_caution</td></tr>
     </tbody>
   </table>
@@ -109,23 +113,25 @@
   <h2>Dispatch Strategy Comparison</h2>
   <table>
     <thead>
-      <tr><th>Strategy</th><th>Status</th><th>Energy Cost</th><th>Gross Savings</th><th>Degradation Cost</th><th>Net Savings</th><th>Discharge Energy</th><th>Final SoC</th></tr>
+      <tr><th>Strategy</th><th>Status</th><th>Energy Cost</th><th>Demand Charge</th><th>Gross Savings</th><th>Degradation Cost</th><th>Net Savings</th><th>EV Readiness</th><th>Peak Demand</th><th>Discharge Energy</th></tr>
     </thead>
     <tbody>
-      <tr><td>no_battery</td><td>calculated</td><td>₹60,542.19</td><td>₹0.00</td><td>₹0.00</td><td>₹0.00</td><td>0.00 kWh</td><td>n/a</td></tr>
-      <tr><td>energy_cost_only</td><td>optimal</td><td>₹46,191.27</td><td>₹14,350.92</td><td>₹1,107.86</td><td>₹13,243.06</td><td>399.11 kWh</td><td>50.00%</td></tr>
-      <tr><td>degradation_aware</td><td>optimal</td><td>₹46,647.21</td><td>₹13,894.98</td><td>₹593.33</td><td>₹13,301.65</td><td>213.75 kWh</td><td>50.00%</td></tr>
+      <tr><td>no_battery</td><td>calculated</td><td>₹49,754.66</td><td>₹25,274.91</td><td>₹0.00</td><td>₹0.00</td><td>₹0.00</td><td>100.0%</td><td>269.60 kW</td><td>0.00 kWh</td></tr>
+      <tr><td>energy_cost_only</td><td>optimal</td><td>₹39,474.74</td><td>₹18,084.80</td><td>₹10,279.92</td><td>₹1,113.27</td><td>₹9,166.65</td><td>100.0%</td><td>192.91 kW</td><td>401.06 kWh</td></tr>
+      <tr><td>degradation_aware</td><td>optimal</td><td>₹39,901.32</td><td>₹18,084.80</td><td>₹9,853.34</td><td>₹631.89</td><td>₹9,221.45</td><td>100.0%</td><td>192.91 kW</td><td>227.64 kWh</td></tr>
     </tbody>
   </table>
 
   <h2>Monthly Net Savings</h2>
   <table>
     <tbody>
-      <tr><th>Daily Net Savings</th><td>₹13,301.65</td></tr>
-      <tr><th>Projected Monthly Net Savings</th><td>₹399,049.50</td></tr>
-      <tr><th>Projected Annual Net Savings</th><td>₹4,855,102.25</td></tr>
-      <tr><th>Demand Charge Savings</th><td>₹10,002.38</td></tr>
-      <tr><th>Peak Demand Reduction</th><td>106.69 kW</td></tr>
+      <tr><th>Daily Net Savings</th><td>₹9,221.45</td></tr>
+      <tr><th>Projected Monthly Net Savings</th><td>₹276,643.50</td></tr>
+      <tr><th>Projected Annual Net Savings</th><td>₹3,365,829.25</td></tr>
+      <tr><th>Demand Charge Savings</th><td>₹7,190.11</td></tr>
+      <tr><th>Monthly Peak-Shaving Savings</th><td>₹215,701.80</td></tr>
+      <tr><th>Peak Demand Reduction</th><td>76.69 kW</td></tr>
+      <tr><th>Unmet EV Energy</th><td>0.00 kWh</td></tr>
     </tbody>
   </table>
 
@@ -150,7 +156,7 @@
   <table>
     <thead><tr><th>Scenario</th><th>Net Savings</th></tr></thead>
     <tbody>
-      <tr><td>Base case</td><td>₹13,301.65</td></tr><tr><td>High degradation cost (+50%)</td><td>₹13,004.98</td></tr><tr><td>Low degradation cost (-50%)</td><td>₹13,797.00</td></tr>
+      <tr><td>Base case</td><td>₹9,221.45</td></tr><tr><td>High degradation cost (+50%)</td><td>₹8,905.51</td></tr><tr><td>Low degradation cost (-50%)</td><td>₹9,723.29</td></tr>
     </tbody>
   </table>
 
@@ -161,14 +167,14 @@
 <tr><td>2026-01-05 01:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>87.79 kW</td><td>5.00/kWh</td></tr>
 <tr><td>2026-01-05 02:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>96.75 kW</td><td>5.00/kWh</td></tr>
 <tr><td>2026-01-05 03:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>101.68 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 04:00:00</td><td>31.46 kW</td><td>0.00 kW</td><td>55.98%</td><td>140.01 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 05:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>117.02 kW</td><td>5.00/kWh</td></tr>
-<tr><td>2026-01-05 06:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>106.34 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 07:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>71.97 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 08:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>22.93 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 09:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 10:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
-<tr><td>2026-01-05 11:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>55.98%</td><td>0.00 kW</td><td>8.00/kWh</td></tr></tbody>
+<tr><td>2026-01-05 04:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>108.55 kW</td><td>5.00/kWh</td></tr>
+<tr><td>2026-01-05 05:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>50.00%</td><td>117.02 kW</td><td>5.00/kWh</td></tr>
+<tr><td>2026-01-05 06:00:00</td><td>0.00 kW</td><td>13.89 kW</td><td>47.08%</td><td>92.44 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 07:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>47.08%</td><td>61.84 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 08:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>47.08%</td><td>19.13 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 09:00:00</td><td>0.00 kW</td><td>0.00 kW</td><td>47.08%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 10:00:00</td><td>33.94 kW</td><td>0.00 kW</td><td>53.52%</td><td>0.00 kW</td><td>8.00/kWh</td></tr>
+<tr><td>2026-01-05 11:00:00</td><td>22.17 kW</td><td>0.00 kW</td><td>57.74%</td><td>0.00 kW</td><td>8.00/kWh</td></tr></tbody>
   </table>
   <p class="small">Schedule preview is limited to the first 12 rows. Full schedule is available in the dispatch report object.</p>
 </body>

@@ -2,88 +2,19 @@
 
 [![Tests](https://github.com/HemangGadhvi04/bess-profitguard/actions/workflows/tests.yml/badge.svg)](https://github.com/HemangGadhvi04/bess-profitguard/actions/workflows/tests.yml)
 
-Battery-aware EMS and BESS intelligence software for EV charging sites and commercial microgrids.
-
-The core product question:
+Degradation-aware BESS EMS for EV charging sites and commercial microgrids.
 
 > Should the battery operate right now, or will the lifetime damage cost more than the money earned?
 
-## Current Build
+## Demo Screenshots
 
-The first working milestone is the data foundation for a degradation-aware BESS/EV charging EMS:
+Dashboard after running the sample EV depot analysis:
 
-1. Generate synthetic 7-day, 15-minute EV depot and BESS datasets.
-2. Validate telemetry, tariff, PV, load, EV sessions, and battery config files.
-3. Produce a data quality report with errors and operational warnings.
-4. Calculate the first battery health report from BESS telemetry.
-5. Convert battery cycling and stress into estimated degradation cost.
-6. Compare no-battery, energy-cost-only, and degradation-aware dispatch strategies.
-7. Generate a professional HTML dispatch audit report.
-8. Expose the MVP pipeline through a FastAPI backend.
-9. Support upload/session folders for user-provided CSV datasets.
-10. Serve a lightweight dashboard for sample-data generation and analysis review.
+![BESS ProfitGuard dashboard](docs/images/dashboard.jpg)
 
-This foundation supports the next modules:
+Generated commercial audit report:
 
-1. Battery Health Engine
-2. Degradation Cost Engine
-3. Dispatch Optimization Engine
-4. Financial and Risk Report Generator
-5. FastAPI backend
-6. React dashboard later
-
-## Repository Map
-
-- [Master Thesis](docs/00-master-thesis.md)
-- [APS Internship Plan](docs/01-aps-internship-plan.md)
-- [PV Reliability Research Project](docs/02-pv-reliability-project.md)
-- [BESS Analytics Roadmap](docs/03-bess-analytics-roadmap.md)
-- [Degradation-Aware EMS Spec](docs/04-degradation-aware-ems-spec.md)
-- [Inverter Forensics Roadmap](docs/05-inverter-forensics-roadmap.md)
-- [Skill Roadmap](docs/06-skill-roadmap.md)
-- [Internship Selection Filter](docs/07-internship-selection-filter.md)
-- [90-Day Action Plan](docs/08-90-day-action-plan.md)
-- [Project Charter](docs/09-project-charter.md)
-- [Commercial Positioning](docs/10-commercial-positioning.md)
-- [Product Improvement Roadmap](docs/11-product-improvement-roadmap.md)
-- [EV Depot Case Study](docs/case_study_ev_depot.md)
-- [Dispatch Optimization Model](docs/optimization_model.md)
-- [Degradation Cost Model](docs/degradation_model.md)
-- [System Limitations](docs/limitations.md)
-- [Master Roadmap PDF](<docs/strategy/Master Roadmap- University → Energy Infrastructure Software Company.pdf>)
-
-## Project Structure
-
-```txt
-backend/app/services/
-  data_generator.py        Synthetic BESS, PV, load, tariff, and EV session data
-  telemetry_validator.py   Data quality and feasibility checks
-  battery_health.py        EFC, C-rate, stress, and simple SoH calculations
-  degradation_cost.py      Battery lifetime cost and dispatch recommendation
-  dispatch_optimizer.py    LP-based dispatch strategy comparison
-  report_generator.py      HTML audit report generation
-
-backend/app/main.py         FastAPI application entrypoint
-
-frontend/
-  index.html                Lightweight dashboard
-  styles.css
-  app.js
-
-data/
-  sample_bess_telemetry.csv
-  sample_site_load.csv
-  sample_pv_generation.csv
-  sample_tariff.csv
-  sample_ev_sessions.csv
-  sample_battery_config.csv
-
-tests/
-  test_data_foundation.py
-
-reports/
-  bess_profitguard_report.html
-```
+![BESS ProfitGuard audit report](docs/images/audit-report.jpg)
 
 ## Quick Start
 
@@ -99,217 +30,98 @@ Run the complete demo pipeline:
 python3 run_demo.py
 ```
 
-This regenerates sample data, validates telemetry, calculates battery health, estimates degradation cost, compares dispatch strategies, and writes:
-
-```txt
-reports/bess_profitguard_report.html
-```
-
-Generate sample datasets:
+Run checks:
 
 ```bash
-python3 generate_sample_data.py
-```
-
-Validate generated datasets:
-
-```bash
-python3 telemetry_validator.py
-```
-
-Generate a battery health report:
-
-```bash
-python3 battery_health_report.py
-```
-
-Generate a degradation cost and dispatch decision report:
-
-```bash
-python3 degradation_cost_report.py
-```
-
-Compare dispatch strategies:
-
-```bash
-python3 dispatch_optimization_report.py
-```
-
-Generate the HTML audit report:
-
-```bash
-python3 generate_report.py
-```
-
-Open the generated file:
-
-```txt
-reports/bess_profitguard_report.html
-```
-
-Run tests:
-
-```bash
-python3 -m pytest -q
-```
-
-Or use the included Makefile:
-
-```bash
-make install
-make demo
+make lint
 make test
+```
+
+Run the API and dashboard:
+
+```bash
 make serve
 ```
 
-Run the API server:
-
-```bash
-python3 -m uvicorn backend.app.main:app --reload
-```
-
-API docs:
-
-```txt
-http://127.0.0.1:8000/docs
-```
-
-Dashboard:
+Open:
 
 ```txt
 http://127.0.0.1:8000/dashboard/
+http://127.0.0.1:8000/api/report/html
 ```
 
-## Data Sign Convention
+## Sample Result
 
 ```txt
-battery_power_kw > 0  means discharging
-battery_power_kw < 0  means charging
-battery_power_kw = 0  means idle
+Generated sample EV depot data
+Validated data quality
+Calculated battery health
+Calculated degradation cost
+Compared dispatch strategies
+Generated audit report
+
+Validation: PASS
+No battery cost: ₹49,754.66
+Energy-cost-only net savings: ₹9,166.65
+Degradation-aware net savings: ₹9,221.45
+Recommended strategy: Use degradation-aware dispatch in Profit Mode; it protects net value after battery lifetime cost.
+
+Report generated:
+reports/bess_profitguard_report.html
 ```
 
-## Validation Coverage
-
-The current validator checks:
-
-- missing timestamps
-- duplicate timestamps
-- irregular time intervals
-- invalid SoC values
-- invalid temperature values
-- voltage outliers
-- battery power limit violations
-- negative load, PV, or tariff values
-- EV departure before arrival
-- EV energy infeasibility within connection window
-- high-temperature exposure warnings
-- high-SoC dwell warnings
-
-## Battery Health Metrics
-
-The current Battery Health Engine calculates:
-
-- estimated SoH
-- equivalent full cycles
-- charge and discharge energy throughput
-- net battery energy
-- max C-rate
-- average active C-rate
-- average and max temperature
-- high-temperature exposure
-- high-SoC dwell
-- low-SoC dwell
-- active operating hours
-- stress score
-- low, medium, or high risk level
-- human-readable risk reasons
-
-## Degradation Cost Metrics
-
-The current Degradation Cost Engine calculates:
-
-- battery replacement cost
-- expected cycle life
-- base cost per equivalent full cycle
-- stress multiplier
-- temperature multiplier
-- SoC dwell multiplier
-- C-rate multiplier
-- SoH multiplier
-- estimated degradation cost
-- dispatch revenue
-- net benefit after degradation cost
-- recommendation: dispatch, dispatch with caution, or preserve
-- confidence and explanation reasons
-
-## Dispatch Optimization Metrics
-
-The current Dispatch Optimization Engine compares:
-
-- no battery baseline
-- energy-cost-only dispatch
-- degradation-aware dispatch
-
-The optimizer uses a 24-hour linear program with:
-
-- site load
-- PV generation
-- import tariff
-- export price
-- battery charge/discharge power limits
-- SoC limits
-- reserve SoC
-- charge/discharge efficiency
-- terminal SoC constraint for fair daily comparison
-- degradation cost per discharged kWh
-- EV charging session windows and energy deadlines
-- demand-charge peak import modeling
-
-The strategy report includes:
-
-- energy cost
-- gross savings
-- degradation cost
-- net savings
-- peak grid import
-- demand-charge cost
-- total charge energy
-- total discharge energy
-- final SoC
-- recommendation
-- hourly degradation-aware schedule
-
-## HTML Audit Report
-
-The generated report combines:
-
-- executive summary
-- site assumptions
-- data quality score
-- battery health summary
-- dispatch strategy comparison
-- revenue vs degradation cost
-- monthly net savings projection
-- battery stress events
-- recommended operating policy
-- no-battery baseline
-- energy-cost-only dispatch
-- degradation-aware dispatch
-- operating assumptions and model limitations
-- schedule preview
-
-Current sample result:
+## Architecture
 
 ```txt
-No battery cost: ₹60,542.19
-Energy-cost-only net savings: ₹13,243.06
-Degradation-aware net savings: ₹13,301.65
-Recommendation: Use degradation-aware dispatch; it protects net value after battery lifetime cost.
+backend/app/main.py                    FastAPI app, security middleware, API routes
+backend/app/services/data_generator.py Synthetic BESS, PV, load, tariff, and EV data
+backend/app/services/telemetry_validator.py
+                                        CSV validation and feasibility checks
+backend/app/services/battery_health.py  SoH, EFC, C-rate, temperature, and stress score
+backend/app/services/degradation_cost.py
+                                        Battery lifetime cost model
+backend/app/services/demand_charge.py   Peak demand and peak-shaving savings
+backend/app/services/ev_scheduler.py    EV readiness and priority readiness summaries
+backend/app/services/operating_modes.py Profit/protection/readiness mode configuration
+backend/app/services/dispatch_optimizer.py
+                                        LP-based BESS + EV depot optimizer
+backend/app/services/report_generator.py
+                                        Commercial HTML audit report
+frontend/                               Lightweight dashboard
+tests/                                  Unit and API tests
+docs/                                   Model docs, roadmap, case study, limitations
 ```
+
+## Features
+
+- Synthetic 7-day, 15-minute EV depot dataset generation.
+- CSV validation for telemetry, tariff, PV, site load, EV sessions, and battery config.
+- Battery health estimate with EFC, SoH, C-rate, temperature exposure, and stress score.
+- Degradation cost model using replacement cost, cycle life, stress, SoH, temperature, and SoC dwell.
+- Dispatch comparison for no battery, energy-cost-only dispatch, and degradation-aware dispatch.
+- Demand charge modeling with peak grid import and peak-shaving savings.
+- EV charging optimization with arrival/departure windows and readiness metrics.
+- Operating modes: `profit_mode`, `battery_protection_mode`, and `ev_readiness_mode`.
+- Commercial audit report with data quality score, monthly savings, stress events, and limitations.
+- FastAPI backend with upload/session support.
+- Lightweight dashboard for running the pipeline and opening the report.
+- GitHub Actions CI plus local `make lint` and `make test`.
+
+## Case Study
+
+The sample EV depot case study compares no-battery operation, energy-cost-only dispatch, and ProfitGuard dispatch.
+
+| Strategy | Energy Cost | Demand Charge | Net Savings | EV Readiness | Peak Demand | Discharge Energy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| No battery | ₹49,754.66 | ₹25,274.91 | ₹0.00 | 100.00% | 269.60 kW | 0.00 kWh |
+| Energy-cost-only | ₹39,474.74 | ₹18,084.80 | ₹9,166.65 | 100.00% | 192.91 kW | 401.06 kWh |
+| Degradation-aware | ₹39,901.32 | ₹18,084.80 | ₹9,221.45 | 100.00% | 192.91 kW | 227.64 kWh |
+
+Key result: degradation-aware dispatch uses about 173 kWh less battery discharge than energy-cost-only dispatch while producing higher net savings after degradation cost.
+
+Full case study: [docs/case_study_ev_depot.md](docs/case_study_ev_depot.md)
 
 ## API Endpoints
-
-The FastAPI backend exposes:
 
 - `GET /api/status`
 - `POST /api/sample-data`
@@ -323,80 +135,64 @@ The FastAPI backend exposes:
 - `POST /api/report`
 - `GET /api/report/html`
 
-Example:
+Example dispatch request:
 
 ```bash
-curl http://127.0.0.1:8000/api/status
-```
-
-Generate data through the API:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/sample-data \
+curl -X POST http://127.0.0.1:8000/api/dispatch \
   -H "Content-Type: application/json" \
-  -d '{"output_dir":"data","days":7,"seed":42}'
+  -d '{"data_dir":"data","dispatch_revenue":7500,"operating_mode":"profit_mode"}'
 ```
 
-Create an upload session:
+Allowed operating modes:
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/sessions \
-  -H "Content-Type: application/json" \
-  -d '{"base_dir":"runs"}'
-```
+- `profit_mode`
+- `battery_protection_mode`
+- `ev_readiness_mode`
 
-Upload a CSV into the session:
+## Docs
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/sessions/{session_id}/upload \
-  -F "file_type=bess_telemetry" \
-  -F "base_dir=runs" \
-  -F "file=@data/sample_bess_telemetry.csv"
-```
+- [Commercial Positioning](docs/10-commercial-positioning.md)
+- [Product Improvement Roadmap](docs/11-product-improvement-roadmap.md)
+- [EV Depot Case Study](docs/case_study_ev_depot.md)
+- [Dispatch Optimization Model](docs/optimization_model.md)
+- [Degradation Cost Model](docs/degradation_model.md)
+- [Demand Charge Model](docs/demand_charge_model.md)
+- [EV Charging Optimization](docs/ev_charging_optimization.md)
+- [Operating Modes](docs/operating_modes.md)
+- [System Limitations](docs/limitations.md)
+- [Master Roadmap PDF](<docs/strategy/Master Roadmap- University → Energy Infrastructure Software Company.pdf>)
 
-Supported upload `file_type` values:
+## Limitations
 
-- `bess_telemetry`
-- `site_load`
-- `pv_generation`
-- `tariff`
-- `ev_sessions`
-- `battery_config`
+- This is decision-support software, not OEM-certified battery degradation prediction.
+- The current dispatch horizon is 24 hours with perfect foresight.
+- Demand charge modeling is simplified and does not yet include utility-specific monthly ratchets.
+- EV charging output is currently aggregate in the schedule; per-vehicle timelines are planned.
+- The app is not a live EMS controller and should not directly control hardware without safety integration.
 
-After upload, use the returned `data_dir` with the existing validation, health, degradation, dispatch, and report endpoints.
+## Roadmap
 
-## Deployment
-
-**Backend (FastAPI)**
-The backend can be deployed on services like Render, Railway, or Fly.io using Docker or Python environments.
-Example using Uvicorn: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
-
-**Frontend**
-The frontend HTML/JS/CSS files can be served statically via GitHub Pages, Vercel, Netlify, or directly by the FastAPI backend using `StaticFiles`.
-
-**GitHub "About" Section Update**
-To update the GitHub repository "About" section:
-1. Go to your GitHub repository page.
-2. Click the gear icon (⚙️) next to the "About" section.
-3. Set the **Description** to: "Degradation-aware BESS EMS for EV charging sites and commercial microgrids."
-4. Add relevant **Topics** such as: `bess`, `ems`, `ev-charging`, `microgrid`, `battery-degradation`, `fastapi`.
+- `v0.2`: demo-ready release with screenshots, one-command demo, and clean README.
+- `v0.3`: commercial audit report with assumptions, limitations, sensitivity, and monthly savings.
+- `v0.4`: commercial EMS optimizer with demand charge, EV readiness, and operating modes.
+- `v0.5`: professional software quality with stronger tests, CI, Docker, API docs, and session history.
+- `v0.6`: Germany/research strength with rainflow cycle counting and validation docs.
+- `v0.7`: pilot-ready SaaS with persistent projects, report history, and deployment.
 
 ## Security Posture
 
-The MVP includes basic production-safety controls:
+- Strict Pydantic request schemas with extra fields rejected.
+- Generic validation and server error responses.
+- Server-side exception logging without stack traces in API responses.
+- Explicit CORS origins through `ALLOWED_ORIGINS`.
+- Security headers for API and dashboard responses.
+- Basic in-memory rate limiting for `/api/*`.
+- Upload size limit through `MAX_UPLOAD_BYTES`.
+- CSV-only upload checks.
+- Path traversal protection for `data`, `runs`, and `reports`.
+- FastAPI docs disabled when `APP_ENV=production`.
 
-- strict Pydantic request schemas with extra fields rejected
-- generic validation and server error responses
-- server-side exception logging without stack traces in API responses
-- explicit CORS origins through `ALLOWED_ORIGINS`
-- security headers for API and dashboard responses
-- basic in-memory rate limiting for `/api/*`
-- upload file size limit through `MAX_UPLOAD_BYTES`
-- CSV-only upload checks
-- path traversal protection for `data`, `runs`, and `reports`
-- FastAPI docs disabled when `APP_ENV=production`
-
-Recommended production environment:
+Production environment example:
 
 ```bash
 APP_ENV=production
@@ -406,50 +202,32 @@ RATE_LIMIT_REQUESTS=120
 RATE_LIMIT_WINDOW_SECONDS=900
 ```
 
-The frontend contains no secrets and should be treated as fully public. Business logic and validation remain server-side.
+## GitHub About
 
-## Dashboard
+Recommended repository description:
 
-The dashboard provides:
+```txt
+Degradation-aware BESS EMS for EV charging sites and commercial microgrids.
+```
 
-- API health status
-- sample-data generation
-- upload session creation
-- typed CSV upload controls
-- uploaded/missing file status
-- data directory and dispatch revenue controls
-- validation summary
-- battery health KPIs
-- degradation cost KPI
-- SoC trajectory chart
-- battery charge/discharge chart
-- grid import chart
-- no-battery vs energy-cost-only vs degradation-aware strategy table
-- risk reasons
-- optimized schedule preview
-- link to the HTML audit report
+Recommended topics:
 
-## Company Direction
+```txt
+bess
+energy-storage
+battery-degradation
+ev-charging
+microgrid
+fastapi
+optimization
+energy-management-system
+battery-health
+python
+```
 
-The long-term company is an energy infrastructure software company, not an energy generation company.
+## Resume Bullets
 
-Best one-line thesis:
-
-> We help BESS owners, EV depots, and microgrid operators maximize revenue without destroying battery lifetime or compromising grid reliability.
-
-## Near-Term Focus
-
-The first software wedge is BESS ProfitGuard:
-
-- Battery telemetry validation
-- Battery health scoring
-- Degradation cost modeling
-- Degradation-aware dispatch optimization
-- EV depot and commercial microgrid reporting
-
-Commercially, the first paid version should be sold as a decision-support audit/report, not as live battery control software.
-
-The immediate next task is to improve the dashboard into a more complete product UI:
-
-- add a persistent report/history view
-- keep CLI and API outputs consistent
+- Built a FastAPI-based BESS dispatch audit platform for EV depots and commercial microgrids.
+- Modeled battery degradation cost, demand charge savings, EV readiness, reserve SoC, and dispatch net savings.
+- Implemented a linear-program optimizer comparing no-battery, energy-cost-only, and degradation-aware strategies.
+- Added production-minded validation, upload sessions, security middleware, CI, tests, and commercial HTML reports.

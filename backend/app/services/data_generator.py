@@ -89,13 +89,17 @@ def generate_ev_sessions(index: pd.DatetimeIndex, rng: np.random.Generator) -> p
             dwell_hours = int(rng.integers(3, 12))
             arrival = day + pd.Timedelta(hours=int(arrival_hour), minutes=int(rng.choice([0, 15, 30, 45])))
             departure = arrival + pd.Timedelta(hours=dwell_hours)
+            max_charging_power_kw = float(rng.choice([7.2, 11.0, 22.0, 50.0]))
+            feasible_energy_kwh = max_charging_power_kw * dwell_hours * 0.82
+            min_energy_kwh = min(18.0, feasible_energy_kwh * 0.45)
+            max_energy_kwh = min(75.0, feasible_energy_kwh)
             sessions.append(
                 {
                     "session_id": f"EV-{session_id:04d}",
                     "arrival_time": arrival,
                     "departure_time": departure,
-                    "required_energy_kwh": round(float(rng.uniform(18, 75)), 3),
-                    "max_charging_power_kw": float(rng.choice([7.2, 11.0, 22.0, 50.0])),
+                    "required_energy_kwh": round(float(rng.uniform(min_energy_kwh, max_energy_kwh)), 3),
+                    "max_charging_power_kw": max_charging_power_kw,
                     "priority_level": int(rng.choice([1, 2, 3], p=[0.2, 0.55, 0.25])),
                 }
             )

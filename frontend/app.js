@@ -155,11 +155,13 @@ function renderStrategies(dispatch) {
   el("strategyRows").innerHTML = strategies.map((strategy) => `<tr>
     <td>${strategy.strategy}</td>
     <td>${money(strategy.energy_cost)}</td>
+    <td>${money(strategy.demand_charge_cost)}</td>
     <td>${money(strategy.gross_savings)}</td>
     <td>${money(strategy.degradation_cost)}</td>
     <td>${money(strategy.net_savings)}</td>
+    <td>${number(strategy.ev_readiness_percent, "%")}</td>
+    <td>${number(strategy.peak_grid_import_kw, " kW")}</td>
     <td>${number(strategy.total_discharge_energy_kwh, " kWh")}</td>
-    <td>${number(strategy.final_soc_percent, "%")}</td>
   </tr>`).join("");
 }
 
