@@ -1,3 +1,5 @@
+# BESS ProfitGuard: data_generator.py
+
 from __future__ import annotations
 
 from dataclasses import dataclass

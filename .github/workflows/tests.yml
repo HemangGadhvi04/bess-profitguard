@@ -1,3 +1,5 @@
+# BESS ProfitGuard CI Workflow
+
 name: Tests
 
 on:

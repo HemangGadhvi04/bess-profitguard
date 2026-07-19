@@ -1,3 +1,5 @@
+# BESS ProfitGuard: operating_modes.py
+
 from __future__ import annotations
 
 from dataclasses import dataclass

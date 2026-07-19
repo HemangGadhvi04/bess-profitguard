@@ -1,3 +1,5 @@
+# BESS ProfitGuard: telemetry_validator.py
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

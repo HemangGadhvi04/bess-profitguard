@@ -1,3 +1,5 @@
+# BESS ProfitGuard: test_degradation_cost.py
+
 from pathlib import Path
 
 import pandas as pd

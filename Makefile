@@ -1,3 +1,5 @@
+# BESS ProfitGuard Makefile
+
 .PHONY: install demo test lint serve
 
 install:

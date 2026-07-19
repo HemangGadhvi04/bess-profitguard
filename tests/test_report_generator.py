@@ -1,3 +1,5 @@
+# BESS ProfitGuard: test_report_generator.py
+
 from pathlib import Path
 
 import pandas as pd

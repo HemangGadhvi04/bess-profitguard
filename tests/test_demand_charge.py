@@ -1,3 +1,5 @@
+# BESS ProfitGuard: test_demand_charge.py
+
 from backend.app.services.demand_charge import calculate_demand_charge_cost, compare_demand_charge
 
 

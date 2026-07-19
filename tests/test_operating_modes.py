@@ -1,3 +1,5 @@
+# BESS ProfitGuard: test_operating_modes.py
+
 import pytest
 
 from backend.app.services.operating_modes import get_operating_mode
